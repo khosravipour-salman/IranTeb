@@ -1,5 +1,6 @@
 import datetime
 from django.db import models
+from django.db.models import Avg
 import datetime
 from django.core import validators
 from django.utils import timezone
@@ -31,6 +32,10 @@ class DoctorUser(User):
 # from doctors.models import DoctorUser
 # d = DoctorUser.objects.all()[0] 
 # d.get_user_shifts()
+    @property
+    def rate(self):
+        r=self.commentfordoctor_set.all().aggregate(Avg('rating'))
+        return r
 
     def get_user_shifts(self):
         for shift in self.doctorshift_set.all():
@@ -111,7 +116,7 @@ class CommentForDoctor(models.Model):
     )
     desciption=models.TextField()
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
-    user=models.OneToOneField("patients.patient",on_delete=models.CASCADE)
+    user=models.ForeignKey("patients.patient",on_delete=models.CASCADE)
     create_time=models.DateTimeField(auto_now_add=True)
     rating=models.CharField(choices=rate_choices,max_length=5)
 
