@@ -139,10 +139,9 @@ class WeekDays(models.Model):
 
 
 class DoctorShift(models.Model):
-    # HOUR_CHOICES = [(dt.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
-    # choices=HOUR_CHOICES
-    start_time=models.TimeField()
-    end_time=models.TimeField()
+    HOUR_CHOICES = [(datetime.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
+    start_time=models.TimeField(choices=HOUR_CHOICES)
+    end_time=models.TimeField(choices=HOUR_CHOICES)
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
 
     def __str__(self):
