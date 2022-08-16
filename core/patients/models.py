@@ -159,6 +159,7 @@ class Appointment(models.Model):
     STATUS_CHOICE=(
         ("cancel","cancel"),
         ("reserve","reserve"),
+        ("reserved","reserved"),
         ("free","free"),
     )
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)

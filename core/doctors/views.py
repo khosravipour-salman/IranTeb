@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from doctors.models import DoctorUser,CommentForDoctor
-from doctors.serializers import CommentSerializers,TopDoctorSerializers
+from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer
+from .models import DoctorSpecialist
 
 
 class NumActiveDoctor(APIView):
@@ -34,4 +35,12 @@ class TopDoctors(APIView):
         
         serializer=TopDoctorSerializers(query,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+class All_Specialist(APIView):
+    def get(self,request):
+        query=DoctorSpecialist.objects.all()
+        serializer=DoctorSpecialistSerializer(query,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
 

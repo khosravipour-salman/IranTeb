@@ -150,7 +150,7 @@ class DoctorShift(models.Model):
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.start_time}-{self.end_time} for {self.doctor}'
+        return f'{self.start_time}-{self.end_time} for {self.doctor.full_name}'
 
 
 
