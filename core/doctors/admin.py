@@ -30,7 +30,7 @@ class DoctorAdmin(BaseUserAdmin):
 
     list_filter = ['is_staff']
     fieldsets = (
-        (None, {'fields': ('first_name', 'last_name', 'email', 'phone_number', 'visit_time', )}),
+        (None, {'fields': ('first_name', 'last_name', 'email', 'phone_number', 'visit_time','doctor_specilist' )}),
         # ('Personal info', {'fields': ('phone_number', 'bio', 'profile_image')}),
         ('Permissions', {'fields': ('is_staff', 'is_active', 'last_seen', )}),
     )

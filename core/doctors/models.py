@@ -1,12 +1,8 @@
 import datetime
-
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from django.core import validators
-import datetime as dt
+import datetime
 from django.core import validators
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, send_mail
 from random import random
 from patients.models import User,UserManager
 
@@ -46,18 +42,44 @@ class DoctorUser(User):
             # 8 * 60 --> 4800 minute
             # 4800 / vt --> chndta visit_time
             # foreach --> vt + st 8:45, 
-
-            print("#########################")
-            print(vt)
-            print(st, et, vt) 
+##################################################################################
+            # print("#########################")
+            # print(vt)
+            # print(type(vt))
+            # print(type(st))
+            # c=datetime.datetime.combine(datetime.date.today(),st)
+            # d=c+vt
+            # print(d)
+            # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             l = []
             while True:
-                a=(st,st+vt)
+                s=datetime.datetime.combine(datetime.date.today(),st)
+                e=datetime.datetime.combine(datetime.date.today(),et)
+                a=(s,s+vt)
                 l.append(a)
-                st=st+vt
-                if st>=et:
+                # print("################")
+                # print(st)
+                # print(vt)
+                # print("@@@@@@@@@@@@@@@@")
+                st=s+vt
+                # print("################")
+                # print(st)
+                # print(type(st))
+                # print(type(et))
+                # print("22222222222222222222")
+                ST=datetime.datetime.strptime(str(st), '%Y-%m-%d %H:%M:%S')
+                ET=datetime.datetime.strptime(str(et), '%H:%M:%S')
+                # print(type(ST))
+                # print(ST.time())
+                # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+                # print(ET.time())
+                # print(type(ET))
+                # t1=ST.time()
+                # t2=ET.time()
+                if ST==ET or ST>ET:
                     break
-                return 
+                
+            return l
 
 
 
@@ -65,10 +87,17 @@ class DoctorSpecialist(models.Model):
     parent=models.ForeignKey("self",on_delete=models.CASCADE,null=True,blank=True)
     specialist=models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.specialist
+
+
 
 class Telephone(models.Model):
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
     telephone_number=models.PositiveBigIntegerField(unique=True)
+
+    def __str__(self):
+        return f'{self.telephone_number} for {self.doctor}'
 
 
 class CommentForDoctor(models.Model):
@@ -86,6 +115,10 @@ class CommentForDoctor(models.Model):
     create_time=models.DateTimeField(auto_now_add=True)
     rating=models.CharField(choices=rate_choices,max_length=5)
 
+    def __str__(self):
+        return f'{self.user} for  {self.doctor}'
+
+
 
 class WeekDays(models.Model):
     choice_days=(
@@ -98,17 +131,28 @@ class WeekDays(models.Model):
         ("friday", "friday" ),
     )
     day=models.CharField(choices=choice_days,max_length=10)
-    week_days=models.ManyToManyField("doctors.DoctorUser",null=True,blank=True)
+    doctor=models.ManyToManyField("doctors.DoctorUser",null=True,blank=True)
+
+    def __str__(self):
+        return f'{self.day}-{self.doctor}'
+
+
 
 class DoctorShift(models.Model):
-    HOUR_CHOICES = [(dt.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
-    start_time=models.TimeField(choices=HOUR_CHOICES)
-    end_time=models.TimeField(choices=HOUR_CHOICES)
+    # HOUR_CHOICES = [(dt.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
+    # choices=HOUR_CHOICES
+    start_time=models.TimeField()
+    end_time=models.TimeField()
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.start_time}-{self.end_time} for {self.doctor}'
+
 
 
 class DoctorExperoence(models.Model):
     experoence=models.TextField()
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
 
-
+    def __str__(self):
+        return f'{self.doctor} work {self.experoence} years'

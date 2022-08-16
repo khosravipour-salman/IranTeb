@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+# from django.utils.translation import ugettext_lazy as _
 from django.core import validators
 import datetime as dt
 from django.core import validators
@@ -56,38 +56,38 @@ class User(AbstractBaseUser, PermissionsMixin):
     admin-compliant permissions.
     Username, password and email are required. Other fields are optional.
     """
-    username = models.CharField(_('username'), max_length=32, unique=True,
-                                help_text=_(
+    username = models.CharField(('username'), max_length=32, unique=True,
+                                help_text=(
                                     'Required. 30 characters or fewer starting with a letter. Letters, digits and underscore only.'),
                                 validators=[
                                     validators.RegexValidator(r'^[a-zA-Z][a-zA-Z0-9_\.]+$',
-                                                              _('Enter a valid username starting with a-z. '
+                                                              ('Enter a valid username starting with a-z. '
                                                                 'This value may contain only letters, numbers '
                                                                 'and underscore characters.'), 'invalid'),
                                 ],
                                 error_messages={
-                                    'unique': _("A user with that username already exists."),
+                                    'unique': ("A user with that username already exists."),
                                 }
                                 )
-    first_name = models.CharField(_('first name'), max_length=30, blank=True)
-    last_name = models.CharField(_('last name'), max_length=30, blank=True)
-    email = models.EmailField(_('email address'), unique=True, null=True, blank=True)
-    phone_number = models.BigIntegerField(_('mobile number'), unique=True, null=True, blank=True,
+    first_name = models.CharField(('first name'), max_length=30, blank=True)
+    last_name = models.CharField(('last name'), max_length=30, blank=True)
+    email = models.EmailField(('email address'), unique=True, null=True, blank=True)
+    phone_number = models.BigIntegerField(('mobile number'), unique=True, null=True, blank=True,
                                           validators=[
                                               validators.RegexValidator(r'^989[0-3,9]\d{8}$',
                                                                         ('Enter a valid mobile number.'), 'invalid'),
                                           ],
                                           error_messages={
-                                              'unique': _("A user with this mobile number already exists."),
+                                              'unique': ("A user with this mobile number already exists."),
                                           }
                                           )
-    is_staff = models.BooleanField(_('staff status'), default=False,
-                                   help_text=_('Designates whether the user can log into this admin site.'))
-    is_active = models.BooleanField(_('active'), default=True,
-                                    help_text=_('Designates whether this user should be treated as active. '
+    is_staff = models.BooleanField(('staff status'), default=False,
+                                   help_text=('Designates whether the user can log into this admin site.'))
+    is_active = models.BooleanField(('active'), default=True,
+                                    help_text=('Designates whether this user should be treated as active. '
                                                 'Unselect this instead of deleting accounts.'))
-    date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
-    last_seen = models.DateTimeField(_('last seen date'), null=True)
+    date_joined = models.DateTimeField(('date joined'), default=timezone.now)
+    last_seen = models.DateTimeField(('last seen date'), null=True)
 
     objects = UserManager()
 
@@ -96,8 +96,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 'users'
-        verbose_name = _('user')
-        verbose_name_plural = _('users')
+        verbose_name = ('user')
+        verbose_name_plural = ('users')
 
     def get_full_name(self):
         """
@@ -150,6 +150,9 @@ class Patient(User):
 class Wallet(models.Model):
     user=models.OneToOneField("patients.Patient",on_delete=models.CASCADE)
     wallet_balance=models.PositiveBigIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.user}-{self.wallet_balance}'
 
 
 class Appointment(models.Model):
