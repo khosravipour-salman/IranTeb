@@ -1,11 +1,11 @@
 import datetime
 from django.db import models
-from django.db.models import Avg
+from django.db.models import Avg,Sum
 import datetime
 from django.core import validators
 from django.utils import timezone
 from random import random
-from patients.models import User,UserManager
+from patients.models import User,UserManager,Appointment
 
 
 
@@ -19,6 +19,18 @@ class DoctorUser(User):
         ("90", "90 mine" ),
         ("120" ,"120 mine" ),
     )
+    gender_choice=(
+        ('male','male'),
+        ('female','female'),
+    )
+    city_choice=(
+        ('Tehran','Tehran'),
+        ('Esfahan','Esfahan'),
+        ('Shiraz','Shiraz'),
+        ('Tabriz','Tabriz'),
+        ('Gilan','Gilan'),
+        ('Khoozestan','Khoozestan'),
+    )
 
     full_name=models.CharField(max_length=80)
     medical_system_code=models.IntegerField(null=True,blank=True)
@@ -28,14 +40,59 @@ class DoctorUser(User):
     cost_visit=models.PositiveBigIntegerField(default=10000,null=True,blank=True)
     visit_time=models.CharField(max_length=10,choices=time_choices,null=True,blank=True)
     doctor_specilist=models.OneToOneField("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
-    
+    gender=models.CharField(choices=gender_choice,max_length=10,null=True,blank=True)
+    city=models.CharField(choices=city_choice,max_length=50,null=True,blank=True)
 # from doctors.models import DoctorUser
 # d = DoctorUser.objects.all()[0] 
 # d.get_user_shifts()
+
     @property
     def rate(self):
-        r=self.commentfordoctor_set.all().aggregate(Avg('rating'))
+        t=self.commentfordoctor_set.all().aggregate(Avg('rating'))
+        r=t["rating__avg"]
         return r
+
+
+    @property
+    def all_patients_reserved(self):
+        c=self.appointment_set.filter(status_reservation='reserved').count()
+        return c
+
+
+    @property
+    def experience_years(self):
+        a=self.doctorexperoence_set.all().aggregate(Sum('years_experience'))
+        e=a['years_experience__sum']
+        return e
+
+
+    @property
+    def doctor_telephone(self):
+        t=self.telephone_set.all()
+        l=[]
+        for tel in t:
+            tn=tel.telephone_number
+            l.append(tn)
+
+        return l
+
+
+    @property
+    def work_day(self):
+        d=self.weekdays_set.all()
+        l=[]
+        for dy in d:
+            day=dy.day
+            l.append(day)
+
+        hours=self.doctorshift_set.get()
+        
+        h1=hours.start_time
+        h2=hours.end_time
+        
+            
+        return l , h1, h2
+
 
     def get_user_shifts(self):
         for shift in self.doctorshift_set.all():
@@ -155,8 +212,9 @@ class DoctorShift(models.Model):
 
 
 class DoctorExperoence(models.Model):
-    experoence=models.TextField()
+    years_experience=models.IntegerField()
+    loction=models.TextField()
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.doctor} work {self.experoence} years'
+        return f'{self.doctor} work {self.years_experience} years in {self.loction}'

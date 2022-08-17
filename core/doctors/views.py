@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from doctors.models import DoctorUser,CommentForDoctor
-from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer
+from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer,AllDoctorSerializers,DoctorDetailSerializer
 from .models import DoctorSpecialist
 
 
@@ -28,15 +28,6 @@ class RecentComment(APIView):
 
 
 
-class TopDoctors(APIView):
-
-    def get (self,request):
-        query=sorted(DoctorUser.objects.all(), key=lambda a: a.rate['rating__avg'],reverse=True)[:10]
-        
-        serializer=TopDoctorSerializers(query,many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-
-
 class All_Specialist(APIView):
     def get(self,request):
         query=DoctorSpecialist.objects.all()
@@ -44,3 +35,24 @@ class All_Specialist(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 
+
+class TopDoctors(APIView):
+
+    def get (self,request):
+        query=sorted(DoctorUser.objects.all(), key=lambda a: a.rate,reverse=True)[:10]
+        serializer=TopDoctorSerializers(query,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+
+class DoctorsList(APIView):
+    def get (self,request):
+        query=sorted(DoctorUser.objects.all(), key=lambda a: a.rate,reverse=True)
+        serializer=AllDoctorSerializers(query,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+class DoctorDetail(APIView):
+    def get(self,request,u_id):
+        query=DoctorUser.objects.get(id=u_id)
+        serializer=DoctorDetailSerializer(query)
+        return Response(serializer.data,status=status.HTTP_200_OK) 
