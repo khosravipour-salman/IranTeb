@@ -1,9 +1,11 @@
 import imp
 from django.shortcuts import render
+from django.db.models import Q
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
 
 from doctors.models import DoctorUser,CommentForDoctor
 from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer,AllDoctorSerializers,DoctorDetailSerializer
@@ -52,7 +54,62 @@ class DoctorsList(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 class DoctorDetail(APIView):
-    def get(self,request,u_id):
-        query=DoctorUser.objects.get(id=u_id)
+    def get(self,request,pk):
+        query=DoctorUser.objects.get(id=pk)
         serializer=DoctorDetailSerializer(query)
         return Response(serializer.data,status=status.HTTP_200_OK) 
+
+
+
+class CommentForOneDoctor(APIView):
+
+    def get(self,request,pk):
+        
+        query=CommentForDoctor.objects.filter(id=pk).order_by('-rating','create_time').order_by('?')
+        serializer=CommentSerializers(query,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK) 
+
+    def post(self,request):
+        serializer=CommentSerializers(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class DoctorAdvanceSearch(APIView):
+    def post(self, request):
+        data=self.request.data
+        query=DoctorUser.objects.all()
+        print(data)
+        print('####################################')
+        try:
+            doctor_name=data['doctor_name']
+            query=query.filter(full_name=doctor_name)
+        except:
+            pass
+
+        try:
+            specialist=data['specialist']
+            query=query.filter(doctor_specilist__specialist=specialist)
+        except:
+            pass
+
+        try:
+            city=data['city']
+            query=query.filter(city=city)
+        except:
+            pass
+
+        try:
+            gender=data['gender']
+            query=query.filter(gender=gender)
+        except:
+            pass
+        
+        serializer=AllDoctorSerializers(query,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+        
+
+

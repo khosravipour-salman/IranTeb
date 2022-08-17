@@ -1,8 +1,9 @@
 from django.contrib import admin
+from .models import DoctorCity
 from doctors.models import (
     DoctorUser, DoctorSpecialist, Telephone,
     CommentForDoctor, WeekDays, DoctorShift,
-    DoctorExperoence,
+    DoctorExperoence,DoctorCity
 )
 from django.contrib import admin
 from django.contrib.auth import get_user_model
@@ -20,6 +21,7 @@ admin.site.register(CommentForDoctor)
 admin.site.register(WeekDays)
 admin.site.register(DoctorShift)
 admin.site.register(DoctorExperoence)
+admin.site.register(DoctorCity)
 
 
 class DoctorAdmin(BaseUserAdmin):

@@ -23,14 +23,14 @@ class DoctorUser(User):
         ('male','male'),
         ('female','female'),
     )
-    city_choice=(
-        ('Tehran','Tehran'),
-        ('Esfahan','Esfahan'),
-        ('Shiraz','Shiraz'),
-        ('Tabriz','Tabriz'),
-        ('Gilan','Gilan'),
-        ('Khoozestan','Khoozestan'),
-    )
+    # city_choice=(
+        # ('Tehran','Tehran'),
+        # ('Esfahan','Esfahan'),
+        # ('Shiraz','Shiraz'),
+        # ('Tabriz','Tabriz'),
+        # ('Gilan','Gilan'),
+        # ('Khoozestan','Khoozestan'),
+    # )
 
     full_name=models.CharField(max_length=80)
     medical_system_code=models.IntegerField(null=True,blank=True)
@@ -41,7 +41,7 @@ class DoctorUser(User):
     visit_time=models.CharField(max_length=10,choices=time_choices,null=True,blank=True)
     doctor_specilist=models.OneToOneField("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
     gender=models.CharField(choices=gender_choice,max_length=10,null=True,blank=True)
-    city=models.CharField(choices=city_choice,max_length=50,null=True,blank=True)
+    city=models.ForeignKey('doctors.DoctorCity',on_delete=models.CASCADE,null=True,blank=True)
 # from doctors.models import DoctorUser
 # d = DoctorUser.objects.all()[0] 
 # d.get_user_shifts()
@@ -144,7 +144,6 @@ class DoctorUser(User):
             return l
 
 
-
 class DoctorSpecialist(models.Model):
     parent=models.ForeignKey("self",on_delete=models.CASCADE,null=True,blank=True)
     specialist=models.CharField(max_length=100)
@@ -160,6 +159,15 @@ class Telephone(models.Model):
 
     def __str__(self):
         return f'{self.telephone_number} for {self.doctor}'
+
+
+
+class DoctorCity(models.Model):
+    parent=models.ForeignKey("self",on_delete=models.CASCADE,null=True,blank=True)
+    city=models.CharField(max_length=50)
+    def __str__(self):
+        return f'{self.city} in {self.parent}'
+
 
 
 class CommentForDoctor(models.Model):
