@@ -13,10 +13,14 @@ class DoctorUser(User):
     time_choices=(
         ("15", "15 mine" ),
         ("20", "20 mine" ),
+        ("25", "25 mine" ),
         ("30", "30 mine" ),
         ("45", "45 mine"),
+        ("50", "50 mine"),
         ("60", "60 mine" ),
+        ("80", "80 mine" ),
         ("90", "90 mine" ),
+        ("100", "100 mine" ),
         ("120" ,"120 mine" ),
     )
     gender_choice=(
@@ -45,6 +49,12 @@ class DoctorUser(User):
 # from doctors.models import DoctorUser
 # d = DoctorUser.objects.all()[0] 
 # d.get_user_shifts()
+
+# vt --> int
+# 16 ta 8 --> total 8 
+# 8 * 60 --> 4800 minute
+# 4800 / vt --> chndta visit_time
+# foreach --> vt + st 8:45, 
 
     @property
     def rate(self):
@@ -76,7 +86,7 @@ class DoctorUser(User):
 
         return l
 
-
+# 
     @property
     def work_day(self):
         d=self.weekdays_set.all()
@@ -84,64 +94,51 @@ class DoctorUser(User):
         for dy in d:
             day=dy.day
             l.append(day)
+        j=[]
+        hours=self.doctorshift_set.all()
+        for i in hours:
+            h1=i.start_time
+            h2=i.end_time
+            k=[h1,h2]
+            j.append(k)
 
-        hours=self.doctorshift_set.get()
-        
-        h1=hours.start_time
-        h2=hours.end_time
         
             
-        return l , h1, h2
-
-
-    def get_user_shifts(self):
+        return l , j
+# 
+    # @property
+    # def doctor_city(self):
+        # c1=self.city.parent
+        # c2=self.city.city
+        # 
+# 
+        # return c2
+    @property
+    def user_shifts(self):
+        l = []
         for shift in self.doctorshift_set.all():
-             
+            j=[]
             et, st= shift.end_time, shift.start_time
             vt = datetime.timedelta(minutes=int(self.visit_time))
-            # vt --> int
-            # 16 ta 8 --> total 8 
-            # 8 * 60 --> 4800 minute
-            # 4800 / vt --> chndta visit_time
-            # foreach --> vt + st 8:45, 
-##################################################################################
-            # print("#########################")
-            # print(vt)
-            # print(type(vt))
-            # print(type(st))
-            # c=datetime.datetime.combine(datetime.date.today(),st)
-            # d=c+vt
-            # print(d)
-            # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            l = []
             while True:
-                s=datetime.datetime.combine(datetime.date.today(),st)
                 e=datetime.datetime.combine(datetime.date.today(),et)
-                a=(s,s+vt)
-                l.append(a)
-                # print("################")
-                # print(st)
-                # print(vt)
-                # print("@@@@@@@@@@@@@@@@")
-                st=s+vt
-                # print("################")
-                # print(st)
-                # print(type(st))
-                # print(type(et))
-                # print("22222222222222222222")
-                ST=datetime.datetime.strptime(str(st), '%Y-%m-%d %H:%M:%S')
-                ET=datetime.datetime.strptime(str(et), '%H:%M:%S')
-                # print(type(ST))
-                # print(ST.time())
-                # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-                # print(ET.time())
-                # print(type(ET))
-                # t1=ST.time()
-                # t2=ET.time()
-                if ST==ET or ST>ET:
-                    break
+                s=datetime.datetime.combine(datetime.date.today(),st)
+                a=((s).time(),(s+vt).time())
+                t=(s+vt).strftime('%H:%M:%S')
+                st=datetime.datetime.strptime(str(t), '%H:%M:%S').time()
+                j.append(a)
+                if st==et or st>et:
+                    if j[-1][-1]>et:
+                        j.pop(-1)
+                    l.append(j)
                 
-            return l
+                    break
+        return l
+        
+
+
+
+
 
 
 class DoctorSpecialist(models.Model):
@@ -201,7 +198,7 @@ class WeekDays(models.Model):
         ("friday", "friday" ),
     )
     day=models.CharField(choices=choice_days,max_length=10)
-    doctor=models.ManyToManyField("doctors.DoctorUser",null=True,blank=True)
+    doctor=models.ManyToManyField("doctors.DoctorUser",blank=True)
 
     def __str__(self):
         return f'{self.day}-{self.doctor}'

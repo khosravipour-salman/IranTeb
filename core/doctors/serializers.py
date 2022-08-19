@@ -21,9 +21,10 @@ class DoctorSpecialistSerializer(serializers.ModelSerializer):
 
 
 class DoctorCitySerializer(serializers.ModelSerializer):
+
     class Meta:
         model=DoctorCity
-        fields=('city',)
+        fields=('parent','city',)
 
 
 class AllDoctorSerializers(serializers.ModelSerializer):
@@ -40,10 +41,10 @@ class AllDoctorSerializers(serializers.ModelSerializer):
 
 
 class DoctorDetailSerializer(serializers.ModelSerializer):
-    # doctor_telephone=TelephoneSerializer()
+    city=DoctorCitySerializer()
     class Meta:
         model=DoctorUser
-        fields=('full_name','doctor_specilist','rate','all_patients_reserved','experience_years','gender','city','registeration_date','adress','doctor_telephone','work_day')
+        fields=('full_name','doctor_specilist','rate','all_patients_reserved','experience_years','gender','city','registeration_date','adress','doctor_telephone','work_day','user_shifts')
 
 
 class CommentSerializers(serializers.ModelSerializer):
