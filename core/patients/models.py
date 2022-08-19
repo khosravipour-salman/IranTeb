@@ -170,3 +170,31 @@ class Appointment(models.Model):
     payment=models.BooleanField(default=False)
     status_reservation=models.CharField(choices=STATUS_CHOICE,max_length=27)
     reservetion_code=models.PositiveIntegerField(null=True,blank=True)
+
+    def __str__(self):
+        return f'{self.status_reservation}'
+
+# from patients.models import Appointment
+#  d = Appointment.objects.filter(status_reservation='reserve')[0]
+
+
+
+    @property
+    def visit_day(self):
+        d=self.day.day
+        return d
+
+    @property
+    def doctor_name(self):
+        n=self.doctor.full_name
+        return n
+
+    @property
+    def doctor_address(self):
+        a=self.doctor.doctor_address
+        return a
+
+    @property
+    def doctor_telephones(self):
+        t=self.doctor.doctor_telephone
+        return t

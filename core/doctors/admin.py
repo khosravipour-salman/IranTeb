@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import DoctorCity
+from .models import DoctorAddress, DoctorCity
 from doctors.models import (
     DoctorUser, DoctorSpecialist, Telephone,
     CommentForDoctor, WeekDays, DoctorShift,
-    DoctorExperoence,DoctorCity
+    DoctorExperoence,DoctorCity,DoctorAddress
 )
 from django.contrib import admin
 from django.contrib.auth import get_user_model
@@ -22,6 +22,7 @@ admin.site.register(WeekDays)
 admin.site.register(DoctorShift)
 admin.site.register(DoctorExperoence)
 admin.site.register(DoctorCity)
+admin.site.register(DoctorAddress)
 
 
 class DoctorAdmin(BaseUserAdmin):
@@ -32,7 +33,7 @@ class DoctorAdmin(BaseUserAdmin):
 
     list_filter = ['is_staff']
     fieldsets = (
-        (None, {'fields': ('first_name', 'last_name','full_name' ,'email', 'phone_number', 'visit_time','doctor_specilist','gender','city' )}),
+        (None, {'fields': ('first_name', 'last_name','full_name' ,'email', 'phone_number', 'visit_time','doctor_specialist','gender','city' )}),
         # ('Personal info', {'fields': ('phone_number', 'bio', 'profile_image')}),
         ('Permissions', {'fields': ('is_staff', 'is_active', 'last_seen', )}),
     )

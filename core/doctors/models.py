@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from django.db.models import Avg,Sum
+from django.http import Http404
 import datetime
 from django.core import validators
 from django.utils import timezone
@@ -38,12 +39,11 @@ class DoctorUser(User):
 
     full_name=models.CharField(max_length=80)
     medical_system_code=models.IntegerField(null=True,blank=True)
-    adress=models.TextField(null=True,blank=True)
     registeration_date=models.DateTimeField(auto_now_add=True,null=True,blank=True)
     bio=models.TextField(null=True,blank=True)
     cost_visit=models.PositiveBigIntegerField(default=10000,null=True,blank=True)
     visit_time=models.CharField(max_length=10,choices=time_choices,null=True,blank=True)
-    doctor_specilist=models.OneToOneField("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
+    doctor_specialist=models.OneToOneField("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
     gender=models.CharField(choices=gender_choice,max_length=10,null=True,blank=True)
     city=models.ForeignKey('doctors.DoctorCity',on_delete=models.CASCADE,null=True,blank=True)
 # from doctors.models import DoctorUser
@@ -86,7 +86,19 @@ class DoctorUser(User):
 
         return l
 
-# 
+    @property
+    def doctor_address(self):
+    
+        a=self.doctoraddress_set.all()
+        l=[]
+        for i in a:
+            j={"address":i.address,"lat":i.lat,"long":i.long}
+            l.append(j)
+        
+        
+        return l
+
+
     @property
     def work_day(self):
         d=self.weekdays_set.all()
@@ -106,13 +118,13 @@ class DoctorUser(User):
             
         return l , j
 # 
-    # @property
-    # def doctor_city(self):
-        # c1=self.city.parent
-        # c2=self.city.city
-        # 
-# 
-        # return c2
+
+
+    @property    
+    def dr_specialist(self):
+        return self.doctor_specialist.specialist
+
+
     @property
     def user_shifts(self):
         l = []
@@ -139,8 +151,6 @@ class DoctorUser(User):
 
 
 
-
-
 class DoctorSpecialist(models.Model):
     parent=models.ForeignKey("self",on_delete=models.CASCADE,null=True,blank=True)
     specialist=models.CharField(max_length=100)
@@ -150,12 +160,25 @@ class DoctorSpecialist(models.Model):
 
 
 
+
+class DoctorAddress(models.Model):
+    doctor=models.ForeignKey('doctors.DoctorUser',on_delete=models.CASCADE)
+    address=models.TextField(null=True,blank=True)
+    lat=models.DecimalField(max_digits=9, decimal_places=6)
+    long=models.DecimalField(max_digits=9, decimal_places=6)
+    def __str__(self):
+        return f'{self.address} for {self.doctor}'
+
+
+
+
 class Telephone(models.Model):
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
     telephone_number=models.PositiveBigIntegerField(unique=True)
 
     def __str__(self):
         return f'{self.telephone_number} for {self.doctor}'
+
 
 
 
@@ -187,6 +210,7 @@ class CommentForDoctor(models.Model):
 
 
 
+
 class WeekDays(models.Model):
     choice_days=(
         ("saturday", "saturday" ),
@@ -197,11 +221,13 @@ class WeekDays(models.Model):
         ("thursday", "thursday" ),
         ("friday", "friday" ),
     )
+    shift=models.ManyToManyField('doctors.DoctorShift')
     day=models.CharField(choices=choice_days,max_length=10)
     doctor=models.ManyToManyField("doctors.DoctorUser",blank=True)
 
     def __str__(self):
         return f'{self.day}-{self.doctor}'
+
 
 
 
@@ -213,6 +239,7 @@ class DoctorShift(models.Model):
 
     def __str__(self):
         return f'{self.start_time}-{self.end_time} for {self.doctor.full_name}'
+
 
 
 
