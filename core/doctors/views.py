@@ -1,15 +1,59 @@
-import imp
+import random
+
 from django.shortcuts import render
 from django.db.models import Q
+from django.core.cache import cache
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 from doctors.models import DoctorUser,CommentForDoctor
-from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer,AllDoctorSerializers,DoctorDetailSerializer
+from doctors.serializers import CommentSerializers,TopDoctorSerializers,DoctorSpecialistSerializer,AllDoctorSerializers,DoctorDetailSerializer,DoctorReserveApointmentSerializer,DrRegisterInformationsserrializer
 from .models import DoctorSpecialist
+from patients.models import Appointment
+
+
+def get_tokens_for_user(user):
+  refresh = RefreshToken.for_user(user)
+  return {
+      'refresh': str(refresh),
+      'access': str(refresh.access_token),
+  }
+
+class  DoctorValidatePhoneSendOTP (APIView):
+
+    def post(self,request):
+        phone_number=request.get('phone_number')
+        if not phone_number:
+            return Response({"msg":"phone number is requierd'"},status=status.HTTP_400_BAD_REQUEST)
+        try:
+            dr_user=DoctorUser.objects.get(phone_number=phone_number)
+        except:
+            dr_user=DoctorUser.objects.create(phone_number=phone_number)
+
+        code = random.randint(10000, 99999)
+        # send message (sms or email)
+        # cache
+        cache.set(str(phone_number), code, 2 * 60)
+
+        return Response({"msg":"code sent successfully"},status=status.HTTP_200_OK)
+
+
+
+class VerifyOTP(APIView):
+
+    def post(self,request):
+        phone_number = request.data.get('phone_number')
+        dr_user=DoctorUser.objects.get(phone_number=phone_number)
+        code = request.data.get('code')
+        cached_code=cache.get(str(phone_number))
+        if code != cached_code:
+            return Response({"msg":"code not matched"},status=status.HTTP_403_FORBIDDEN)
+        token = get_tokens_for_user(dr_user)
+        return Response({'token':token, 'msg':'Successful'}, status=status.HTTP_201_CREATED)
 
 
 class NumActiveDoctor(APIView):
@@ -112,4 +156,16 @@ class DoctorAdvanceSearch(APIView):
 
         
 
+class DoctorReserveApointment(APIView):
+    def get(self,request,pk):
+        dra=Appointment.objects.filter(doctor__id=pk,status_reservation='reserve')
+        serializer=DoctorReserveApointmentSerializer(dra,many=True)
+        return Response (serializer.data,status=status.HTTP_200_OK)
 
+
+
+class DrRegisterInformations(APIView):
+    def get(self,request,pk):
+        drinfo=DoctorUser.objects.get(id=pk)
+        serializer=DrRegisterInformationsserrializer(drinfo)
+        return Response(serializer.data,status=status.HTTP_200_OK)

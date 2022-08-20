@@ -184,6 +184,24 @@ class Appointment(models.Model):
         d=self.day.day
         return d
 
+
+    @property
+    def patient_name(self):
+        n=self.user.full_name
+        return n
+
+    @property
+    def patient_insurance(self):
+        pi=self.user.Insurance
+        return pi
+
+
+    @property
+    def patient_phone_number(self):
+        pn=self.user.phone_number
+        return pn
+
+
     @property
     def doctor_name(self):
         n=self.doctor.full_name

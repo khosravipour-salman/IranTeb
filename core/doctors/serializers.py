@@ -3,7 +3,7 @@ from pyexpat import model
 from rest_framework import serializers
 from .models import CommentForDoctor,DoctorUser,Telephone,DoctorCity
 from .models import DoctorCity, DoctorSpecialist
-
+from patients.models import Appointment
 
 
 
@@ -57,3 +57,16 @@ class CommentSerializers(serializers.ModelSerializer):
     class Meta:
         model=CommentForDoctor
         fields='__all__'
+
+
+
+class DoctorReserveApointmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Appointment
+        fields=('status_reservation','patient_name','patient_phone_number','patient_insurance',)
+
+
+class DrRegisterInformationsserrializer(serializers.ModelSerializer):
+    class Meta:
+        model=DoctorUser
+        fields=('registeration_date','phone_number')

@@ -230,7 +230,6 @@ class WeekDays(models.Model):
 
 
 
-
 class DoctorShift(models.Model):
     HOUR_CHOICES = [(datetime.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
     start_time=models.TimeField(choices=HOUR_CHOICES)

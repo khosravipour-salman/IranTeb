@@ -33,8 +33,8 @@ class UserSatisfy(APIView):
 
 class PatientReserveAppointment(APIView):
     def get (self,request,pk):
-        ra_query=Appointment.objects.filter(user__id=pk,status_reservation__in='reserve')
-        serializer=ReserveAppointmentSerializer(ra_query,many=True)
+        pra_query=Appointment.objects.filter(user__id=pk,status_reservation__in='reserve')
+        serializer=ReserveAppointmentSerializer(pra_query,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 
