@@ -4,7 +4,7 @@ from rest_framework import serializers
 from .models import CommentForDoctor,DoctorUser,Telephone,DoctorCity
 from .models import DoctorCity, DoctorSpecialist
 from patients.models import Appointment
-
+# n,jkdjk
 
 
 
