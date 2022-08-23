@@ -1,5 +1,7 @@
 import datetime
+import jdatetime
 from django.db import models
+from django_jalali.db import models as jmodels
 from django.db.models import Avg,Sum
 from django.http import Http404
 import datetime
@@ -89,19 +91,16 @@ class DoctorUser(User):
     @property
     def doctor_address(self):
     
-        a=self.doctoraddress_set.all()
-        l=[]
-        for i in a:
-            j={"address":i.address,"lat":i.lat,"long":i.long}
-            l.append(j)
+        a=self.dr_address
+        j={"address":a.address,"lat":a.lat,"long":a.long}
         
         
-        return l
+        return j
 
 
     @property
     def work_day(self):
-        d=self.weekdays_set.all()
+        d=self.wkday.all()
         l=[]
         for dy in d:
             day=dy.day
@@ -116,7 +115,7 @@ class DoctorUser(User):
 
         
             
-        return l , j
+        return  l , j
 # 
 
 
@@ -124,9 +123,32 @@ class DoctorUser(User):
     def dr_specialist(self):
         return self.doctor_specialist.specialist
 
+    @property
+    def dr_work_days(self):
+        wd=self.wkday.all()
+        l=[]
+        week_days=[('sunday',0),('monday',1),('tuesday',2),('wednesday',3),('thursday',4),('friday',5),('saturday',6),]
+        for day_of_week in wd:
+            day=day_of_week.day
+            for i in week_days:
+                if i[0]==day:
+                    D=i[1]
+
+                    my_date = datetime.date.today()
+                    year, week_num ,nd= my_date.isocalendar()
+                    for i in range(0,2):
+                        d=f'{year}-W{week_num}-{D}'
+                        gregorian_date = datetime.datetime.strptime(d, "%Y-W%W-%w")
+                        convert_to_jalali=jdatetime.datetime.fromgregorian(datetime=gregorian_date).date()
+                        l.append(convert_to_jalali)
+                        week_num+=1
+
+        T=sorted(l)
+        return T
+    
 
     @property
-    def user_shifts(self):
+    def dr_shift_times(self):
         l = []
         for shift in self.doctorshift_set.all():
             j=[]
@@ -162,7 +184,7 @@ class DoctorSpecialist(models.Model):
 
 
 class DoctorAddress(models.Model):
-    doctor=models.ForeignKey('doctors.DoctorUser',on_delete=models.CASCADE)
+    doctor=models.OneToOneField('doctors.DoctorUser',on_delete=models.CASCADE,related_name='dr_address')
     address=models.TextField(null=True,blank=True)
     lat=models.DecimalField(max_digits=9, decimal_places=6)
     long=models.DecimalField(max_digits=9, decimal_places=6)
@@ -201,7 +223,7 @@ class CommentForDoctor(models.Model):
     )
     desciption=models.TextField()
     doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
-    user=models.ForeignKey("patients.patient",on_delete=models.CASCADE)
+    user=models.ForeignKey("patients.patient",on_delete=models.CASCADE,null=True,)
     create_time=models.DateTimeField(auto_now_add=True)
     rating=models.CharField(choices=rate_choices,max_length=5)
 
@@ -223,7 +245,7 @@ class WeekDays(models.Model):
     )
     shift=models.ManyToManyField('doctors.DoctorShift')
     day=models.CharField(choices=choice_days,max_length=10)
-    doctor=models.ManyToManyField("doctors.DoctorUser",blank=True)
+    doctor=models.ManyToManyField("doctors.DoctorUser",blank=True,related_name='wkday')
 
     def __str__(self):
         return f'{self.day}-{self.doctor}'
@@ -234,7 +256,7 @@ class DoctorShift(models.Model):
     HOUR_CHOICES = [(datetime.time(hour=x), '{:02d}:00'.format(x)) for x in range(0, 24)]
     start_time=models.TimeField(choices=HOUR_CHOICES)
     end_time=models.TimeField(choices=HOUR_CHOICES)
-    doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
+    doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE,blank=True)
 
     def __str__(self):
         return f'{self.start_time}-{self.end_time} for {self.doctor.full_name}'

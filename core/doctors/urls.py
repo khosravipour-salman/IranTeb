@@ -14,5 +14,10 @@ urlpatterns = [
     path('doctor-advance-search/',views.DoctorAdvanceSearch.as_view()),
     path('doctor-reserve-apointment/<int:pk>',views.DoctorReserveApointment.as_view()),
     path('dr-register-informations/<int:pk>',views.DrRegisterInformations.as_view()),
+    path('doctor-validate-phone-send-otp/',views.DoctorValidatePhoneSendOTP.as_view()),
+    path('dr-verify-otp/',views.DrVerifyOTP.as_view()),
+    path('doctor-address/<int:pk>',views.DoctorAddressInfo.as_view()),
+    path('doctor-Tellphone/<int:dr_pk>/<int:t_pk>',views.DoctorTellphone.as_view()),
+    path('doctor-complete-info/<int:pk>/',views.DrCompleteInfo.as_view()),
 
 ]

@@ -1,7 +1,7 @@
 from dataclasses import fields
 from pyexpat import model
 from rest_framework import serializers
-from .models import CommentForDoctor,DoctorUser,Telephone,DoctorCity
+from .models import CommentForDoctor,DoctorUser,Telephone,DoctorCity,DoctorAddress
 from .models import DoctorCity, DoctorSpecialist
 from patients.models import Appointment
 
@@ -43,10 +43,16 @@ class AllDoctorSerializers(serializers.ModelSerializer):
 class DoctorDetailSerializer(serializers.ModelSerializer):
     city=DoctorCitySerializer()
 
-    doctor_specialist=serializers.SerializerMethodField('get_doctor_specialist')
+    doctor_specialist=serializers.SerializerMethodField('get_doctor_specialist',read_only=True)
 
     def get_doctor_specialist(self,obj):
-        return {'parent':obj.doctor_specialist.parent,'specialist':obj.doctor_specialist.specialist}
+        # return str ({"specialist":obj.doctor_specialist.parent,
+        # " high specialist'":obj.doctor_specialist.specialist})
+        a={"specialist":obj.doctor_specialist.parent,
+        " high specialist'":obj.doctor_specialist.specialist}
+        
+        return str(a)
+        
 
     class Meta:
         model=DoctorUser
@@ -70,3 +76,30 @@ class DrRegisterInformationsserrializer(serializers.ModelSerializer):
     class Meta:
         model=DoctorUser
         fields=('registeration_date','phone_number')
+
+
+class DoctorTellphoneSerializer(serializers.ModelSerializer):
+    def get_doctor(self,obj):
+        return obj.doctor.full_name
+
+    doctor=serializers.SerializerMethodField('get_doctor')
+    class Meta:
+        model=Telephone
+        fields='__all__'
+
+
+class DoctorAddressSerializer(serializers.ModelSerializer):
+    def get_doctor(self,obj):
+        return obj.doctor.full_name
+
+    doctor=serializers.SerializerMethodField('get_doctor')
+
+    class Meta:
+        model=DoctorAddress
+        fields='__all__'
+
+
+class DrCompleteInfoSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model=DoctorUser
+        fields=('full_name','medical_system_code','dr_specialist','doctor_telephone','doctor_address')

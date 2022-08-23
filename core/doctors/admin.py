@@ -40,7 +40,7 @@ class DoctorAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password', 'password_2',)}
+            'fields': ('username','password', 'password_2',)}
         ),
     )
     search_fields = ['email']

@@ -21,3 +21,11 @@ class MyDoctorsSerializer(serializers.ModelSerializer):
         fields=('doctor_name','doctor',)
 
 
+class DoctorFreeAppointmentSerializer(serializers.ModelSerializer):
+    def get_doctor(self,obj):
+        return obj.doctor.full_name
+    
+    doctor=serializers.SerializerMethodField('get_doctor')
+    class Meta:
+        model=Appointment
+        fields=('doctor','start_visit_time','end_visit_time','date_of_visit')

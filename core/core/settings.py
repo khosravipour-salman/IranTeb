@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'patients',
     'rest_framework',
     'rest_framework_simplejwt',
+    'azbankgateways',
 
 ]
 
@@ -142,3 +143,36 @@ REST_FRAMEWORK = {
     )
 
 }
+
+
+# 
+# AZ_IRANIAN_BANK_GATEWAYS = {
+#    'GATEWAYS': {
+    #    'BMI': {
+        #    'MERCHANT_CODE': BMI_MERCHANT_CODE,
+        #    'TERMINAL_CODE': BMI_TERMINAL_CODE,
+        #    'SECRET_KEY': BMI_SECRET_KEY,
+    #    },
+    #    'SEP': {
+        #    'MERCHANT_CODE': SEP_MERCHANT_CODE,
+        #    'TERMINAL_CODE': SEP_TERMINAL_CODE,
+    #    },
+    #    'IDPAY': {
+        #    'MERCHANT_CODE': '<YOUR MERCHANT CODE>',
+        #    'METHOD': 'POST',  # GET or POST
+        #    'X_SANDBOX': 1,  # 0 disable, 1 active
+    #    },
+    #   
+#    },
+#    'IS_SAMPLE_FORM_ENABLE': True, # اختیاری و پیش فرض غیر فعال است
+#    'DEFAULT': 'IDPAY',
+#    'CURRENCY': 'IRR', # اختیاری
+#    'TRACKING_CODE_QUERY_PARAM': 'tc', # اختیاری
+#    'TRACKING_CODE_LENGTH': 16, # اختیاری
+#    'SETTING_VALUE_READER_CLASS': 'azbankgateways.readers.DefaultReader', # اختیاری
+#    'BANK_PRIORITIES': [
+    #    'BMI',
+    #    'SEP',
+    #    and so on ...
+#    ], # اختیاری
+# }

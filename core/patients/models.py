@@ -1,4 +1,5 @@
 from django.db import models
+from django_jalali.db import models as jmodels
 # from django.utils.translation import ugettext_lazy as _
 from django.core import validators
 import datetime as dt
@@ -72,7 +73,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(('first name'), max_length=30, blank=True)
     last_name = models.CharField(('last name'), max_length=30, blank=True)
     email = models.EmailField(('email address'), unique=True, null=True, blank=True)
-    phone_number = models.BigIntegerField(('mobile number'), unique=True, null=True, blank=True,
+    phone_number = models.BigIntegerField(('mobile number'), unique=True,null=True,blank=True,
                                           validators=[
                                               validators.RegexValidator(r'^989[0-3,9]\d{8}$',
                                                                         ('Enter a valid mobile number.'), 'invalid'),
@@ -92,7 +93,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email', 'phone_number']
+    REQUIRED_FIELDS = ['email','phone_number']
 
     class Meta:
         db_table = 'users'
@@ -117,6 +118,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         Sends an email to this User.
         """
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+    
+    def ph_number(self):
+        return str(self.phone_number)
 
     @property
     def is_loggedin_user(self):
@@ -162,22 +167,38 @@ class Appointment(models.Model):
         ("reserved","reserved"),
         ("free","free"),
     )
-    doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
+    doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE,null=True)
     user=models.ForeignKey("patients.Patient",null=True,blank=True,on_delete=models.DO_NOTHING)
-    start_visit_time=models.TimeField()
-    end_visit_time=models.TimeField()
-    day=models.ForeignKey("doctors.WeekDays",on_delete=models.CASCADE)
+    start_visit_time=models.TimeField(null=True,blank=True)
+    end_visit_time=models.TimeField(null=True,blank=True)
+    date_of_visit=jmodels.jDateField(null=True,blank=True)
+    # day=models.ForeignKey("doctors.WeekDays",on_delete=models.CASCADE,null=True)
     payment=models.BooleanField(default=False)
-    status_reservation=models.CharField(choices=STATUS_CHOICE,max_length=27)
+    status_reservation=models.CharField(choices=STATUS_CHOICE,max_length=27,default='free')
     reservetion_code=models.PositiveIntegerField(null=True,blank=True)
 
     def __str__(self):
-        return f'{self.status_reservation}'
+        return f' {self.status_reservation}-for user  {self.user}-from doctor  {self.doctor.full_name}'
 
 # from patients.models import Appointment
 #  d = Appointment.objects.filter(status_reservation='reserve')[0]
 
+    def doctor_appointments(self):
+        shifts=self.doctor.dr_shift_times
+        dr_work_days=self.doctor.dr_work_days
+        for date in dr_work_days:
+            for shift_time in shifts:
+                for visit_time in shift_time:
+                    start_visit=visit_time[0]
+                    end_visit=visit_time[1]
+                    obj=Appointment.objects.filter(doctor=self.doctor,start_visit_time=start_visit,
+                    end_visit_time=end_visit,date_of_visit=date,).exists()
+                    if obj==False:                
+                        Appointment.objects.create(doctor=self.doctor,start_visit_time=start_visit,
+                        end_visit_time=end_visit,date_of_visit=date,
+                        )
 
+        return 'doctor appointments create'
 
     @property
     def visit_day(self):

@@ -37,6 +37,7 @@ class UserAdminCreationForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['username', ]
+        # fields = ['phone_number', ]
 
     def clean(self):
         cleaned_data = super().clean()
