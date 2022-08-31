@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'patients',
     'rest_framework',
     'rest_framework_simplejwt',
-    'azbankgateways',
+    # 'azbankgateways',
 
 ]
 

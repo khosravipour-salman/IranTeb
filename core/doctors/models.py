@@ -41,13 +41,21 @@ class DoctorUser(User):
 
     full_name=models.CharField(max_length=80)
     medical_system_code=models.IntegerField(null=True,blank=True)
-    registeration_date=models.DateTimeField(auto_now_add=True,null=True,blank=True)
+    registeration_date=jmodels.jDateTimeField(auto_now_add=True,null=True,blank=True)
     bio=models.TextField(null=True,blank=True)
     cost_visit=models.PositiveBigIntegerField(default=10000,null=True,blank=True)
     visit_time=models.CharField(max_length=10,choices=time_choices,null=True,blank=True)
-    doctor_specialist=models.OneToOneField("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
+    doctor_specialist=models.ForeignKey("doctors.DoctorSpecialist",on_delete=models.CASCADE,null=True,blank=True)
     gender=models.CharField(choices=gender_choice,max_length=10,null=True,blank=True)
     city=models.ForeignKey('doctors.DoctorCity',on_delete=models.CASCADE,null=True,blank=True)
+
+    # def save(self, *args, **kwargs):
+        # super().save(*args, **kwargs)  # Call the "real" save() method.
+        # a=Appointment.objects.all().filter( doctor = self ).exists()
+        # if a==False:
+            # self.model = Appointment.objects.create( doctor = self )
+
+
 # from doctors.models import DoctorUser
 # d = DoctorUser.objects.all()[0] 
 # d.get_user_shifts()
@@ -243,7 +251,7 @@ class WeekDays(models.Model):
         ("thursday", "thursday" ),
         ("friday", "friday" ),
     )
-    shift=models.ManyToManyField('doctors.DoctorShift')
+    # shift=models.ManyToManyField('doctors.DoctorShift',null=True,blank=True)
     day=models.CharField(choices=choice_days,max_length=10)
     doctor=models.ManyToManyField("doctors.DoctorUser",blank=True,related_name='wkday')
 

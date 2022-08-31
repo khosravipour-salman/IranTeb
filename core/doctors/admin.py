@@ -29,7 +29,7 @@ class DoctorAdmin(BaseUserAdmin):
     form = UserAdminChangeForm
     add_form = UserAdminCreationForm
 
-    list_display = ['first_name', 'last_name','full_name', 'email', 'phone_number','is_staff', 'is_active', 'date_joined', 'last_seen', ]    
+    list_display = ['id','first_name', 'last_name','full_name', 'email', 'phone_number','is_staff', 'is_active', 'registeration_date', 'last_seen', ]    
 
     list_filter = ['is_staff']
     fieldsets = (
@@ -40,11 +40,11 @@ class DoctorAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username','password', 'password_2',)}
+            'fields': ('phone_number','password', 'password_2',)}
         ),
     )
-    search_fields = ['email']
-    ordering = ['email']
+    search_fields = ['full_name']
+    ordering = ['id']
     filter_horizontal = ()
 
 
