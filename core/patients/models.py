@@ -1,6 +1,6 @@
 from django.db import models
 from django_jalali.db import models as jmodels
-# from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.core import validators
 import datetime as dt
 from django.core import validators
@@ -136,7 +136,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return str(self.phone_number)
+        return f'{str(self.phone_number)}-{self.first_name} {self.last_name}'
 
 
 class Patient(User):

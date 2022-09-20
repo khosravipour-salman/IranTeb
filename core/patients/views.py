@@ -1,18 +1,21 @@
+from asyncio.windows_events import NULL
+from patients.models import Patient
 import random
+import jdatetime
 
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
 
 from doctors.models import DoctorUser
 from .models import Appointment
 from django.db.models import Avg
 from doctors.models import CommentForDoctor
 
-from patients.serializers import ReserveAppointmentSerializer, MyDoctorsSerializer, DoctorFreeAppointmentSerializer, RserveAppointmentByPatientSerializer
-
-from patients.models import Patient
+from patients.serializers import (ReserveAppointmentSerializer, MyDoctorsSerializer,
+                                  DoctorFreeAppointmentSerializer, RserveAppointmentByPatientSerializer)
 
 
 class NumActiveUser(APIView):
@@ -36,6 +39,7 @@ class UserSatisfy(APIView):
 
 
 class PatientReserveAppointment(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, pk):
         pra_query = Appointment.objects.filter(
             user__id=pk, status_reservation__in='reserve')
@@ -44,6 +48,7 @@ class PatientReserveAppointment(APIView):
 
 
 class MyDoctor(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, pk):
         l = ['reserve', 'reserved', 'cancel']
         ra_query = Appointment.objects.filter(
@@ -69,6 +74,7 @@ class DoctorFreeAppointment(APIView):
 
 
 class RserveAppointmentByPatient(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, u_id, dr_id):
         user = Patient.objects.get(id=u_id)
         doctor = DoctorUser.objects.get(id=dr_id)
@@ -78,7 +84,8 @@ class RserveAppointmentByPatient(APIView):
         end_visit_time = data['end_visit_time']
         date_of_visit = data['date_of_visit']
         q = Appointment.objects.filter(
-            doctor=doctor, start_visit_time=start_visit_time, end_visit_time=end_visit_time, date_of_visit=date_of_visit, status_reservation='free').first()
+            doctor=doctor, start_visit_time=start_visit_time, end_visit_time=end_visit_time,
+            date_of_visit=date_of_visit, status_reservation='free').first()
         print(q)
         print("$$$$$$$$$$$$$$")
         q.user = user
@@ -86,11 +93,58 @@ class RserveAppointmentByPatient(APIView):
         q.reservetion_code = random.randint(10000, 99999)
         q.save()
         # q.update(user=user, status_reservation='reserve',
-        #              reservetion_code=random.randint(10000, 99999))
+        #  reservetion_code=random.randint(10000, 99999))
         print(q)
         print("$$^^^^^^^^^^^^^^^^^")
         serializer = RserveAppointmentByPatientSerializer(q)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CancelAppointmentByPatient(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, u_id, dr_id):
+        data = self.request.data
+        start_visit_time = data['start_visit_time']
+        end_visit_time = data['end_visit_time']
+        date_of_visit = data['date_of_visit']
+        reserve_appointment = Appointment.objects.filter(
+            user__id=u_id, doctor__id=dr_id, date_of_visit=date_of_visit, start_visit_time=start_visit_time,
+            end_visit_time=end_visit_time, status_reservation='reserve').first()
+
+        date_of_appointment = reserve_appointment.date_of_visit
+        to_day = jdatetime.datetime.today().date()
+        delta = (date_of_appointment-to_day).days
+        if delta >= 2:
+            reserve_appointment.user = None
+            reserve_appointment.reservetion_code = None
+            reserve_appointment.status_reservation = 'free'
+            reserve_appointment.save()
+
+            return Response({'msg': 'appointment canceled by patient'}, status=status.HTTP_200_OK)
+
+        return Response({'msg': 'you can cancel maximon 48hour befor resserve time '}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CnacelAppointmentByDoctor(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, u_id, dr_id):
+        data = self.request.data
+        start_visit_time = data['start_visit_time']
+        end_visit_time = data['end_visit_time']
+        date_of_visit = data['date_of_visit']
+        reserve_appointment = Appointment.objects.filter(
+            user__id=u_id, doctor__id=dr_id, date_of_visit=date_of_visit, start_visit_time=start_visit_time,
+            end_visit_time=end_visit_time, status_reservation='reserve').first()
+
+        date_of_appointment = reserve_appointment.date_of_visit
+        to_day = jdatetime.datetime.today().date()
+        delta = (date_of_appointment-to_day).days
+        if delta >= 2:
+            reserve_appointment.status_reservation = 'cancel'
+            reserve_appointment.save()
+            return Response({'msg': 'appointment canceled by doctor'}, status=status.HTTP_200_OK)
+
+        return Response({'msg': 'you can cancel maximon 48hour befor resserve time '}, status=status.HTTP_400_BAD_REQUEST)
 
 
 #

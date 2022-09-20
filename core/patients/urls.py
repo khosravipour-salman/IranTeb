@@ -12,6 +12,7 @@ urlpatterns = [
     path('my-doctor/<int:pk>/',views.MyDoctor.as_view()),
     path('doctor-free-appointment/<int:pk>/',views.DoctorFreeAppointment.as_view()),
     path('rserve-appointment-by-patient/<int:u_id>/<int:dr_id>/',views.RserveAppointmentByPatient.as_view()),
+    path('cancel-appointment-by-patient/<int:u_id>/<int:dr_id>/',views.CancelAppointmentByPatient.as_view()),
 
 
     # path('bankgateways/', az_bank_gateways_urls()),

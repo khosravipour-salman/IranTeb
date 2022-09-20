@@ -40,8 +40,18 @@ class DoctorFreeAppointmentSerializer(serializers.ModelSerializer):
 
 
 class RserveAppointmentByPatientSerializer(serializers.ModelSerializer):
-    
+    def get_doctor(self, obj):
+        a={'full_name':obj.doctor.full_name,'id':obj.doctor.id}
+        return a
+
+    def get_user(self, obj):
+        b={'full_name':obj.user.full_name,'id':obj.user.id}
+        return b
+
+    doctor = serializers.SerializerMethodField('get_doctor')
+    user = serializers.SerializerMethodField('get_user')
 
     class Meta:
         model = Appointment
-        fields = ('doctor','user','start_visit_time','end_visit_time','date_of_visit',)
+        fields = ('doctor', 'user', 'start_visit_time',
+                  'end_visit_time', 'date_of_visit',)
