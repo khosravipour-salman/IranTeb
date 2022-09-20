@@ -8,7 +8,6 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from random import random
 
 
-
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -37,7 +36,8 @@ class UserManager(BaseUserManager):
             if email:
                 username = email.split('@', 1)[0]
             if phone_number:
-                username = random.choice('abcdefghijklmnopqrstuvwxyz') + str(phone_number)[-7:]
+                username = random.choice(
+                    'abcdefghijklmnopqrstuvwxyz') + str(phone_number)[-7:]
             while User.objects.filter(username=username).exists():
                 username += str(random.randint(10, 99))
 
@@ -62,30 +62,31 @@ class User(AbstractBaseUser, PermissionsMixin):
                                 validators=[
                                     validators.RegexValidator(r'^[a-zA-Z][a-zA-Z0-9_\.]+$',
                                                               ('Enter a valid username starting with a-z. '
-                                                                'This value may contain only letters, numbers '
-                                                                'and underscore characters.'), 'invalid'),
-                                ],
-                                error_messages={
+                                                               'This value may contain only letters, numbers '
+                                                               'and underscore characters.'), 'invalid'),
+    ],
+        error_messages={
                                     'unique': ("A user with that username already exists."),
-                                }
-                                )
+    }
+    )
     first_name = models.CharField(('first name'), max_length=30, blank=True)
     last_name = models.CharField(('last name'), max_length=30, blank=True)
-    email = models.EmailField(('email address'), unique=True, null=True, blank=True)
+    email = models.EmailField(
+        ('email address'), unique=True, null=True, blank=True)
     phone_number = models.BigIntegerField(('mobile number'), unique=True, null=True, blank=True,
                                           validators=[
                                               validators.RegexValidator(r'^989[0-3,9]\d{8}$',
                                                                         ('Enter a valid mobile number.'), 'invalid'),
-                                          ],
-                                          error_messages={
+    ],
+        error_messages={
                                               'unique': ("A user with this mobile number already exists."),
-                                          }
-                                          )
+    }
+    )
     is_staff = models.BooleanField(('staff status'), default=False,
                                    help_text=('Designates whether the user can log into this admin site.'))
     is_active = models.BooleanField(('active'), default=True,
                                     help_text=('Designates whether this user should be treated as active. '
-                                                'Unselect this instead of deleting accounts.'))
+                                               'Unselect this instead of deleting accounts.'))
     date_joined = models.DateTimeField(('date joined'), default=timezone.now)
     last_seen = models.DateTimeField(('last seen date'), null=True)
 
@@ -132,28 +133,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Patient(User):
-    Insurance_choice=(
-        ("اتیه سازان", "atiye sazan" ),
-        ("تامین اجتماعی", "tamin ejtemayi" ),
-        ("سامان", "saman" ),
-        ("دانا", "dana" ),
-        ("ایران", "iran" ),
+    Insurance_choice = (
+        ("اتیه سازان", "atiye sazan"),
+        ("تامین اجتماعی", "tamin ejtemayi"),
+        ("سامان", "saman"),
+        ("دانا", "dana"),
+        ("ایران", "iran"),
     )
 
-    full_name=models.CharField(max_length=80)
-    national_code=models.PositiveBigIntegerField()
-    profile_image=models.ImageField()
-    Insurance=models.CharField(max_length=35,choices=Insurance_choice)
-
+    full_name = models.CharField(max_length=80)
+    national_code = models.PositiveBigIntegerField()
+    profile_image = models.ImageField()
+    Insurance = models.CharField(max_length=35, choices=Insurance_choice)
 
 
 class Wallet(models.Model):
-    user=models.OneToOneField("patients.Patient",on_delete=models.CASCADE)
-    wallet_balance=models.PositiveBigIntegerField(default=0)
+    user = models.OneToOneField("patients.Patient", on_delete=models.CASCADE)
+    wallet_balance = models.PositiveBigIntegerField(default=0)
 
     @property
     def user_name(self):
-        l=self.user.full_name
+        l = self.user.full_name
         return l
 
     def __str__(self):
@@ -161,56 +161,56 @@ class Wallet(models.Model):
 
 
 class Appointment(models.Model):
-    STATUS_CHOICE=(
-        ("cancel","cancel"),
-        ("reserve","reserve"),
-        ("reserved","reserved"),
-        ("free","free"),
+    STATUS_CHOICE = (
+        ("cancel", "cancel"),
+        ("reserve", "reserve"),
+        ("reserved", "reserved"),
+        ("free", "free"),
     )
-    doctor=models.ForeignKey("doctors.DoctorUser",on_delete=models.CASCADE)
-    user=models.ForeignKey("patients.Patient",null=True,blank=True,on_delete=models.DO_NOTHING)
-    start_visit_time=models.TimeField()
-    end_visit_time=models.TimeField()
-    day=models.ForeignKey("doctors.WeekDays",on_delete=models.CASCADE)
-    payment=models.BooleanField(default=False)
-    status_reservation=models.CharField(choices=STATUS_CHOICE,max_length=27)
-    reservetion_code=models.PositiveIntegerField(null=True,blank=True)
+    doctor = models.ForeignKey("doctors.DoctorUser", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        "patients.Patient", null=True, blank=True, on_delete=models.DO_NOTHING)
+    start_visit_time = models.TimeField()
+    end_visit_time = models.TimeField()
+    day = models.ForeignKey("doctors.WeekDays", on_delete=models.CASCADE)
+    payment = models.BooleanField(default=False)
+    status_reservation = models.CharField(choices=STATUS_CHOICE, max_length=27)
+    reservetion_code = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.status_reservation}'
 
-
     @property
     def name_doctor(self):
-        x=self.doctor.full_name
+        x = self.doctor.full_name
         return x
 
     @property
     def day_week(self):
-        m=self.day.day
+        m = self.day.day
         return m
 
     @property
     def doctor_address(self):
-        a=self.doctor.doctor_address
+        a = self.doctor.doctor_address
         return a
 
     @property
     def doctor_telephones(self):
-        g=self.doctor.doctor_telephone
+        g = self.doctor.doctor_telephone
         return g
 
     @property
     def reserved_code(self):
-        g=self.reservetion_code
+        g = self.reservetion_code
         return g
 
     @property
     def patient_insurance(self):
-        n=self.user.Insurance
+        n = self.user.Insurance
         return n
 
     @property
     def user_name(self):
-        b=self.user.full_name
+        b = self.user.full_name
         return b

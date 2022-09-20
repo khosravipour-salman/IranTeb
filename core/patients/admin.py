@@ -1,9 +1,9 @@
 from django.contrib import admin
 from patients.models import (
-    Patient, 
-    Wallet, 
-    Appointment, 
-) 
+    Patient,
+    Wallet,
+    Appointment,
+)
 
 admin.site.register(Patient)
 admin.site.register(Wallet)

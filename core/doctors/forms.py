@@ -7,7 +7,8 @@ User = get_user_model()
 
 class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
-    password_2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
+    password_2 = forms.CharField(
+        label='Confirm Password', widget=forms.PasswordInput)
 
     class Meta:
         model = User
@@ -31,9 +32,10 @@ class RegisterForm(forms.ModelForm):
 
 class UserAdminCreationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
-    password_2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
+    password_2 = forms.CharField(
+        label='Confirm Password', widget=forms.PasswordInput)
     # medical_system_code=forms.CharField(label='medical system code')
-    
+
     class Meta:
         model = User
         fields = ['username', ]
@@ -60,7 +62,7 @@ class UserAdminChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'is_active',]
+        fields = ['email', 'password', 'is_active', ]
 
     # def clean_password(self):
         # print("#######################################################")
