@@ -1,6 +1,31 @@
 from dataclasses import fields
 from rest_framework import serializers
-from patients.models import Appointment
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
+from patients.models import Appointment, Wallet, Patient
+
+
+class LogOutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': ('Token is invalid or expired')
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except TokenError:
+            self.fail('bad_token')
+
+
+class patientCompleteInfoSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = Patient
+        fields = ('full_name', 'national_code', 'Insurance',)
 
 
 class ReserveAppointmentSerializer(serializers.ModelSerializer):
@@ -10,6 +35,12 @@ class ReserveAppointmentSerializer(serializers.ModelSerializer):
                   'start_visit_time', 'end_visit_time', 'status_reservation', 'visit_day', 'payment')
 
     # 'start_visit_time','end_visit_time','day','status_reservation'
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = ('user', 'wallet_balance')
 
 
 class MyDoctorsSerializer(serializers.ModelSerializer):
@@ -41,11 +72,11 @@ class DoctorFreeAppointmentSerializer(serializers.ModelSerializer):
 
 class RserveAppointmentByPatientSerializer(serializers.ModelSerializer):
     def get_doctor(self, obj):
-        a={'full_name':obj.doctor.full_name,'id':obj.doctor.id}
+        a = {'full_name': obj.doctor.full_name, 'id': obj.doctor.id}
         return a
 
     def get_user(self, obj):
-        b={'full_name':obj.user.full_name,'id':obj.user.id}
+        b = {'full_name': obj.user.full_name, 'id': obj.user.id}
         return b
 
     doctor = serializers.SerializerMethodField('get_doctor')

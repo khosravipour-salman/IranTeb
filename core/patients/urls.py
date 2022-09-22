@@ -5,6 +5,10 @@ from patients import views
 
 
 urlpatterns = [
+    path('patient-register-send-otp/',views.PatientRegisterSendOTp.as_view()),
+    path('patient-login-send-otp/',views.PatientLoginSendOTp.as_view()),
+    path('patient-verify-otp/',views.PatientVerifyOTP.as_view()),
+    path('patient-complete-info/',views.PatientCompleteInfo.as_view()),
     path('num-active-user/',views.NumActiveUser.as_view()),
     path('num-success-reserved/',views.NumSuccessfulReseced.as_view()),
     path('percent-satisfy/',views.UserSatisfy.as_view()),

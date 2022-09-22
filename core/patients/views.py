@@ -1,13 +1,19 @@
 from asyncio.windows_events import NULL
-from patients.models import Patient
+from patients.models import Patient, Wallet
 import random
+import redis
+from datetime import timedelta
 import jdatetime
 
+from django.core.cache import cache
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from doctors.models import DoctorUser
 from .models import Appointment
@@ -15,7 +21,148 @@ from django.db.models import Avg
 from doctors.models import CommentForDoctor
 
 from patients.serializers import (ReserveAppointmentSerializer, MyDoctorsSerializer,
-                                  DoctorFreeAppointmentSerializer, RserveAppointmentByPatientSerializer)
+                                  DoctorFreeAppointmentSerializer, RserveAppointmentByPatientSerializer,
+                                  WalletSerializer, patientCompleteInfoSerilizer, LogOutSerializer)
+
+
+r = redis.Redis(host='localhost', port=6379, db=0)
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        token['phone_number'] = user.phone_number
+        token['full_name'] = user.full_name
+
+        return token
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+
+class GetUserID(APIView):
+    def post(self, request):
+        data = self.request.data
+        access_token = data['access_token']
+        access_token_obj = AccessToken(access_token)
+        user_id = access_token_obj['user_id']
+        user_full_name=access_token_obj['full_name']
+        user_phone_number=access_token_obj['phone_number']
+        return Response({'user_id': user_id})
+
+
+class PatientLoginSendOTp(APIView):
+    def post(self, request):
+        phone_number = self.request.data['phone_number']
+        if not phone_number:
+            return Response({"msg": "phone number is requierd'"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            dr_user = Patient.objects.get(phone_number=phone_number)
+        except:
+            return Response({"msg": "you dont have any user account with this phone number please register "}, status=status.HTTP_400_BAD_REQUEST)
+
+        code = random.randint(10000, 99999)
+
+        r.setex(str(phone_number), timedelta(minutes=2), value=code)
+        print('*****************************')
+        print(r.get(str(phone_number)).decode())
+        print('#############################')
+        print(code)
+        # cache.set(str(phone_number), code, 2*60)
+        # cached_code = cache.get(str(phone_number))
+        # print(cached_code)
+#######################################
+        # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
+        # phone_number2 = '0'+phone_number[2:]
+        # print()
+        # print(phone_number2)
+        # url = 'https://api.kavenegar.com/v1/%s/sms/send.json' % {api_key}
+        # data = {"receptor": "09362815318", "text": str(code)}
+        # r = requests.post(url, data=data)
+
+        return Response({"msg": "code sent successfully"}, status=status.HTTP_200_OK)
+
+
+class LogoutView(APIView):
+    def post(self, request, *args):
+        serializer = LogOutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PatientRegisterSendOTp (APIView):
+
+    def post(self, request):
+        phone_number = self.request.data['phone_number']
+        if not phone_number:
+            return Response({"msg": "phone number is requierd'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        patient = Patient.objects.create(
+            phone_number=phone_number, is_active=False)
+
+        code = random.randint(10000, 99999)
+        r.setex(str(phone_number), timedelta(minutes=1), value=code)
+        print('*****************************')
+        print(r.get(str(phone_number)).decode())
+        print('#############################')
+#
+        # cache.set(str(phone_number), code, 2*60)
+        # cached_code = cache.get(str(phone_number))
+        # print(cached_code)
+
+#################################################
+        # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
+        # phone_number2 = '0'+phone_number[2:]
+        # print()
+        # print(phone_number2)
+        # url = 'https://api.kavenegar.com/v1/%s/sms/send.json' % {api_key}
+        # data = {"receptor": "09395377024", "text": str(code)}
+        # r = requests.post(url, data=data)
+
+        return Response({"msg": "code sent successfully"}, status=status.HTTP_200_OK)
+
+
+class PatientVerifyOTP(APIView):
+
+    def post(self, request):
+        phone_number = self.request.data['phone_number']
+        patient = Patient.objects.get(phone_number=phone_number)
+        code = self.request.data['code']
+        cached_code = r.get(str(phone_number)).decode()
+        # cached_code = cache.get(str(phone_number))
+        if code != cached_code:
+            return Response({"msg": "code not matched"}, status=status.HTTP_403_FORBIDDEN)
+        token = get_tokens_for_user(patient)
+        return Response({'token': token, 'msg': 'Successful'}, status=status.HTTP_201_CREATED)
+
+
+class PatientCompleteInfo(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        data = self.request.data
+        phone_number = data['phone_number']
+
+        patient = Patient.objects.get(phone_number=phone_number)
+        serializer = patientCompleteInfoSerilizer(patient, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            patient.is_active = True
+            patient.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class NumActiveUser(APIView):
@@ -40,6 +187,7 @@ class UserSatisfy(APIView):
 
 class PatientReserveAppointment(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, pk):
         pra_query = Appointment.objects.filter(
             user__id=pk, status_reservation__in='reserve')
@@ -47,8 +195,19 @@ class PatientReserveAppointment(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class PatientReservedAppointment(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        pra_query = Appointment.objects.filter(
+            user__id=pk, status_reservation__in='reserved')
+        serializer = ReserveAppointmentSerializer(pra_query, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class MyDoctor(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, pk):
         l = ['reserve', 'reserved', 'cancel']
         ra_query = Appointment.objects.filter(
@@ -73,8 +232,18 @@ class DoctorFreeAppointment(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK,)
 
 
+class MyWallet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        query = Wallet.objects.get(user__id=pk)
+        serializer = WalletSerializer(query)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class RserveAppointmentByPatient(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, u_id, dr_id):
         user = Patient.objects.get(id=u_id)
         doctor = DoctorUser.objects.get(id=dr_id)
@@ -102,6 +271,7 @@ class RserveAppointmentByPatient(APIView):
 
 class CancelAppointmentByPatient(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, u_id, dr_id):
         data = self.request.data
         start_visit_time = data['start_visit_time']
@@ -127,6 +297,7 @@ class CancelAppointmentByPatient(APIView):
 
 class CnacelAppointmentByDoctor(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, u_id, dr_id):
         data = self.request.data
         start_visit_time = data['start_visit_time']

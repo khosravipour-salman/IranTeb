@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.core.cache import cache
 
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
@@ -26,7 +26,7 @@ from .models import DoctorSpecialist, Telephone, DoctorAddress, WeekDays
 from patients.models import Appointment
 
 
-# r = redis.Redis(host='localhost', port=6379, db=0)
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 
 def get_tokens_for_user(user):
@@ -49,14 +49,14 @@ class DoctorLoginSendOTp(APIView):
 
         code = random.randint(10000, 99999)
 
-        # r.setex(str(phone_number), timedelta(minutes=2), value=code)
-        # print('*****************************')
-        # print(r.get(str(phone_number)).decode())
-        # print('#############################')
-        # print(code)
-        cache.set(str(phone_number), code, 2*60)
-        cached_code = cache.get(str(phone_number))
-        print(cached_code)
+        r.setex(str(phone_number), timedelta(minutes=2), value=code)
+        print('*****************************')
+        print(r.get(str(phone_number)).decode())
+        print('#############################')
+        print(code)
+        # cache.set(str(phone_number), code, 2*60)
+        # cached_code = cache.get(str(phone_number))
+        # print(cached_code)
 #######################################
         # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
         # phone_number2 = '0'+phone_number[2:]
@@ -88,14 +88,14 @@ class DoctorRegisterSendOTp (APIView):
             phone_number=phone_number, is_active=False)
 
         code = random.randint(10000, 99999)
-        # r.setex(str(phone_number), timedelta(minutes=1), value=code)
-        # print('*****************************')
-        # print(r.get(str(phone_number)).decode())
-        # print('#############################')
-
-        cache.set(str(phone_number), code, 2*60)
-        cached_code = cache.get(str(phone_number))
-        print(cached_code)
+        r.setex(str(phone_number), timedelta(minutes=1), value=code)
+        print('*****************************')
+        print(r.get(str(phone_number)).decode())
+        print('#############################')
+# 
+        # cache.set(str(phone_number), code, 2*60)
+        # cached_code = cache.get(str(phone_number))
+        # print(cached_code)
 
 #################################################
         # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
@@ -115,8 +115,8 @@ class DrVerifyOTP(APIView):
         phone_number = self.request.data['phone_number']
         dr_user = DoctorUser.objects.get(phone_number=phone_number)
         code = self.request.data['code']
-        # cached_code = r.get(str(phone_number)).decode()
-        cached_code = cache.get(str(phone_number))
+        cached_code = r.get(str(phone_number)).decode()
+        # cached_code = cache.get(str(phone_number))
         if code != cached_code:
             return Response({"msg": "code not matched"}, status=status.HTTP_403_FORBIDDEN)
         token = get_tokens_for_user(dr_user)
@@ -133,9 +133,9 @@ class DrCompleteInfo(APIView):
         serializer = DrCompleteInfoSerilizer(dr, data=request.data)
         if serializer.is_valid():
             doctor_telephone = Telephone.objects.create(
-                doctor=dr, telephone_number=data['doctor_telephone'])
+                doctor=dr, telephone_number=serializer.data['doctor_telephone'])
             doctor_address = DoctorAddress.objects.create(
-                doctor=dr, address=data['doctor_address'])
+                doctor=dr, address=serializer.data['doctor_address'])
             serializer.save()
             dr.is_active = True
             dr.save()
@@ -244,6 +244,7 @@ class DoctorAdvanceSearch(APIView):
 
 class DoctorReserveApointment(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, pk):
         dra = Appointment.objects.filter(
             doctor__id=pk, status_reservation='reserve')
@@ -253,6 +254,7 @@ class DoctorReserveApointment(APIView):
 
 class DrRegisterInformations(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, pk):
         drinfo = DoctorUser.objects.get(id=pk)
         serializer = DrRegisterInformationsserrializer(drinfo)
@@ -261,6 +263,7 @@ class DrRegisterInformations(APIView):
 
 class RetriveDoctorShiftTime(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, dr_pk):
         query = DoctorShift.objects.filter(doctor__id=dr_pk)
         serializer = RetriveDrShiftTimeSerializer(query, many=True)
@@ -269,6 +272,7 @@ class RetriveDoctorShiftTime(APIView):
 
 class CreateDoctorShiftTime(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, dr_pk):
         serializer = CreateDrShiftTimeSerializer(data=request.data)
         doctor_instance = DoctorUser.objects.get(id=dr_pk)
@@ -280,6 +284,7 @@ class CreateDoctorShiftTime(APIView):
 
 class UpdateDoctorShiftTime(APIView):
     permission_classes = [IsAuthenticated]
+
     def put(self, request, pk):
         query = DoctorShift.objects.get(id=pk)
         serializer = CreateDrShiftTimeSerializer(query, data=request.data)
@@ -291,6 +296,7 @@ class UpdateDoctorShiftTime(APIView):
 
 class DeleteDoctorShiftTime(APIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request, pk):
         query = DoctorShift.objects.get(id=pk)
         query.delete()
@@ -299,6 +305,7 @@ class DeleteDoctorShiftTime(APIView):
 
 class DoctorAddressInfo(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, dr_pk):
         query = DoctorAddress.objects.get(doctor__id=dr_pk)
         serializer = DoctorAddressSerilizer(query)
@@ -323,6 +330,7 @@ class DoctorAddressInfo(APIView):
 
 class RetriveDoctorTellePhone(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, dr_pk):
         query = Telephone.objects.filter(doctor__id=dr_pk)
         serilizer = RetriveDoctorTellePhoneSerilizer(query, many=True)
@@ -331,6 +339,7 @@ class RetriveDoctorTellePhone(APIView):
 
 class CreateDoctorTellePhone(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, dr_pk):
         doctor_instance = DoctorUser.objects.get(id=dr_pk)
         serializer = CreateDoctorTellePhoneSerilizer(data=request.data)
@@ -342,6 +351,7 @@ class CreateDoctorTellePhone(APIView):
 
 class UpdateDoctorTellePhone(APIView):
     permission_classes = [IsAuthenticated]
+
     def put(self, request, pk):
         query = Telephone.objects.get(id=pk)
         serializer = CreateDoctorTellePhoneSerilizer(query, data=request.data)
@@ -353,6 +363,7 @@ class UpdateDoctorTellePhone(APIView):
 
 class DeleteDoctorTellePhone(APIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request, pk):
         query = Telephone.objects.get(id=pk)
         query.delete()
@@ -361,6 +372,7 @@ class DeleteDoctorTellePhone(APIView):
 
 class DoctorVisitTime(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, dr_pk):
         query = DoctorUser.objects.get(id=dr_pk)
         serializer = DoctorVisitTimeSerializer(query)
@@ -377,6 +389,7 @@ class DoctorVisitTime(APIView):
 
 class DoctorWorkDays(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, dr_pk):
         query = WeekDays.objects.filter(doctor__id=dr_pk)
         serializer = DoctorWorkDaysSrializer(query, many=True)
@@ -400,6 +413,7 @@ class DoctorWorkDays(APIView):
 
 class DrChangePhoneNumber(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, dr_pk):
         data = self.request.data
         new_phone_number = data['new_phone_number']
@@ -409,10 +423,4 @@ class DrChangePhoneNumber(APIView):
         return Response({'msg': 'your new phone number saved'}, status=status.HTTP_202_ACCEPTED)
 
 
-class GetUserID(APIView):
-    def post(self, request):
-        data = self.request.data
-        access_token = data['access_token']
-        access_token_obj = AccessToken(access_token)
-        user_id = access_token_obj['user_id']
-        return Response({'user_id': user_id})
+

@@ -176,5 +176,5 @@ class DoctorVisitTimeSerializer(serializers.ModelSerializer):
 
 class DoctorWorkDaysSrializer(serializers.ModelSerializer):
     class Meta:
-        model=WeekDays
-        fields=('day',)
+        model = WeekDays
+        fields = ('day',)
