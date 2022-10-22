@@ -1,12 +1,15 @@
+import datetime as dt
+from random import random
+
 from django.db import models
 from django_jalali.db import models as jmodels
 from django.utils.translation import ugettext_lazy as _
 from django.core import validators
-import datetime as dt
 from django.core import validators
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, send_mail
-from random import random
+
+from patients.validators import national_code_validator
 
 
 class UserManager(BaseUserManager):
@@ -57,6 +60,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     admin-compliant permissions.
     Username, password and email are required. Other fields are optional.
     """
+    choise_user = (('doctor', 'doctor'), ('patient', 'patient'))
+    doctor_or_patient = models.CharField(
+        choices=choise_user, max_length=10, null=True, blank=True)
+    profile_image = models.ImageField(null=True, blank=True)
     username = models.CharField(('username'), max_length=32, unique=True, null=True, blank=True,
                                 help_text=(
                                     'Required. 30 characters or fewer starting with a letter. Letters, digits and underscore only.'),
@@ -70,8 +77,15 @@ class User(AbstractBaseUser, PermissionsMixin):
                                     'unique': ("A user with that username already exists."),
     }
     )
-    first_name = models.CharField(('first name'), max_length=30, blank=True)
-    last_name = models.CharField(('last name'), max_length=30, blank=True)
+    full_name = models.CharField(('full name'), max_length=80)
+    # national_code = models.PositiveBigIntegerField(null=True)
+    # gender_choice = (
+    # ('male', 'male'),
+    # ('female', 'female'),
+    # )
+    # gender = models.CharField(choices=gender_choice,
+    #   max_length=10, null=True, blank=True)
+
     email = models.EmailField(
         ('email address'), unique=True, null=True, blank=True)
     phone_number = models.BigIntegerField(('mobile number'), unique=True, null=True, blank=True,
@@ -94,25 +108,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['email', ]
+    REQUIRED_FIELDS = ['email', 'username']
 
     class Meta:
         db_table = 'users'
         verbose_name = ('user')
         verbose_name_plural = ('users')
 
-    def get_full_name(self):
-        """
-        Returns the first_name plus the last_name, with a space in between.
-        """
-        full_name = '%s %s' % (self.first_name, self.last_name)
-        return full_name.strip()
-
-    def get_short_name(self):
-        """
-        Returns the short name for the user.
-        """
-        return self.first_name
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """
@@ -136,7 +138,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f'{str(self.phone_number)}-{self.first_name} {self.last_name}'
+        return f'{str(self.phone_number)} - {self.full_name} - {self.doctor_or_patient}'
 
 
 class Patient(User):
@@ -146,11 +148,21 @@ class Patient(User):
         ("سامان", "saman"),
         ("دانا", "dana"),
         ("ایران", "iran"),
+        ("هیچ کدام", "none"),
+    
     )
-
-    full_name = models.CharField(max_length=80)
-    national_code = models.PositiveBigIntegerField()
-    profile_image = models.ImageField()
+    gender_choice = (
+        ('male', 'male'),
+        ('female', 'female'),
+    )
+# full name and nationa; code registeration_date  gender pak shavad dakhel user asli beravad
+    # full_name = models.CharField(max_length=80)
+    national_code = models.CharField(max_length=10,
+                                     null=True, validators=[national_code_validator])
+    registeration_date = jmodels.jDateTimeField(
+        auto_now_add=True, null=True, blank=True)
+    gender = models.CharField(choices=gender_choice,
+                              max_length=10, null=True, blank=True)
     Insurance = models.CharField(max_length=35, choices=Insurance_choice)
 
 
@@ -178,12 +190,13 @@ class Appointment(models.Model):
     date_of_visit = jmodels.jDateField(null=True, blank=True)
     # day=models.ForeignKey("doctors.WeekDays",on_delete=models.CASCADE,null=True)
     payment = models.BooleanField(default=False)
+    payment_code = models.PositiveIntegerField(null=True, blank=True)
     status_reservation = models.CharField(
         choices=STATUS_CHOICE, max_length=27, null=True, blank=True)
     reservetion_code = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
-        return f' {self.status_reservation}-for user  {self.user}-from doctor  {self.doctor.full_name}'
+        return f' {self.status_reservation}-for user  {self.user}- from doctor  {self.doctor.full_name}'
 
 # from patients.models import Appointment
 #  d = Appointment.objects.filter(status_reservation='reserve')[0]
@@ -204,6 +217,10 @@ class Appointment(models.Model):
                                                    )
 
         return 'doctor appointments create'
+
+    def get_total_price(self):
+
+        return int(self.doctor.cost_of_visit)
 
     @property
     def visit_day(self):

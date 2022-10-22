@@ -6,7 +6,7 @@ app_name='doctor'
 urlpatterns = [
     path('active-doctor-user',views.NumActiveDoctor.as_view()),
     path('recent-comment',views.RecentComment.as_view()),
-    path('comment-for-doctor/<int:pk>',views.CommentForOneDoctor.as_view()),
+    path('comment-for-doctor/<int:dr_id>',views.CommentForOneDoctor.as_view()),
     path('top-doctors',views.TopDoctors.as_view()),
     path('all-specialist/',views.All_Specialist.as_view()),
     path('doctors-list/',views.DoctorsList.as_view()),
@@ -17,6 +17,7 @@ urlpatterns = [
     path('doctor-register-send-otp/',views.DoctorRegisterSendOTp.as_view()),
     path('doctor-login-send-otp/',views.DoctorLoginSendOTp.as_view()),
     path('dr-verify-otp/',views.DrVerifyOTP.as_view()),
+    path('Logout/',views.LogoutView.as_view()),
     path('doctor-complete-info/',views.DrCompleteInfo.as_view()),
     path('retrive-doctor-shift-time/<int:dr_pk>/',views.RetriveDoctorShiftTime.as_view()),
     path('create-doctor-shift-time/<int:dr_pk>/',views.CreateDoctorShiftTime.as_view()),
@@ -30,7 +31,7 @@ urlpatterns = [
     path('doctor-visit-time/<int:dr_pk>/',views.DoctorVisitTime.as_view()),
     path('doctor-work-days/<int:dr_pk>/',views.DoctorWorkDays.as_view()),
     path('doctor-change-phone-number/<int:dr_pk>/',views.DrChangePhoneNumber.as_view()),
-    path('get-user-id/',views.GetUserID.as_view()),
+    
 
 
 ]

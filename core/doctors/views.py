@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
-
+from core.tasks import send_SMS_task
 from doctors.models import DoctorUser, CommentForDoctor, DoctorShift
 from doctors.serializers import (CommentSerializers, TopDoctorSerializers,
                                  DoctorSpecialistSerializer, AllDoctorSerializers, DoctorDetailSerializer,
@@ -24,13 +24,13 @@ from doctors.serializers import (CommentSerializers, TopDoctorSerializers,
                                  DoctorVisitTimeSerializer, DoctorWorkDaysSrializer, LogOutSerializer)
 from .models import DoctorSpecialist, Telephone, DoctorAddress, WeekDays
 from patients.models import Appointment
-
+from patients.views import MyTokenObtainPairSerializer
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
 
 def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
+    refresh = MyTokenObtainPairSerializer.get_token(user)
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
@@ -38,6 +38,10 @@ def get_tokens_for_user(user):
 
 
 class DoctorLoginSendOTp(APIView):
+    """
+    api for doctor login
+    """
+
     def post(self, request):
         phone_number = self.request.data['phone_number']
         if not phone_number:
@@ -50,26 +54,19 @@ class DoctorLoginSendOTp(APIView):
         code = random.randint(10000, 99999)
 
         r.setex(str(phone_number), timedelta(minutes=2), value=code)
+        # send sms by kaveh negar
+        send_SMS_task.delay(phone_number, code)
         print('*****************************')
         print(r.get(str(phone_number)).decode())
-        print('#############################')
-        print(code)
-        # cache.set(str(phone_number), code, 2*60)
-        # cached_code = cache.get(str(phone_number))
-        # print(cached_code)
-#######################################
-        # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
-        # phone_number2 = '0'+phone_number[2:]
-        # print()
-        # print(phone_number2)
-        # url = 'https://api.kavenegar.com/v1/%s/sms/send.json' % {api_key}
-        # data = {"receptor": "09362815318", "text": str(code)}
-        # r = requests.post(url, data=data)
 
         return Response({"msg": "code sent successfully"}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
+    """
+    api for logout doctor
+    """
+
     def post(self, request, *args):
         serializer = LogOutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -78,6 +75,9 @@ class LogoutView(APIView):
 
 
 class DoctorRegisterSendOTp (APIView):
+    """
+    api for doctor register
+    """
 
     def post(self, request):
         phone_number = self.request.data['phone_number']
@@ -85,31 +85,27 @@ class DoctorRegisterSendOTp (APIView):
             return Response({"msg": "phone number is requierd'"}, status=status.HTTP_400_BAD_REQUEST)
 
         dr_user = DoctorUser.objects.create(
-            phone_number=phone_number, is_active=False)
+            phone_number=phone_number, is_active=False, doctor_or_patient='doctor')
 
         code = random.randint(10000, 99999)
-        r.setex(str(phone_number), timedelta(minutes=1), value=code)
+        r.setex(str(phone_number), timedelta(minutes=2), value=code)
+        # send sms by kaveh negar
+        send_SMS_task.delay(phone_number, code)
         print('*****************************')
         print(r.get(str(phone_number)).decode())
         print('#############################')
-# 
+#
         # cache.set(str(phone_number), code, 2*60)
         # cached_code = cache.get(str(phone_number))
         # print(cached_code)
-
-#################################################
-        # api_key = '5141626263533245386B337871415745785856684D5667637573375459306134574C6B47315634437676383D'
-        # phone_number2 = '0'+phone_number[2:]
-        # print()
-        # print(phone_number2)
-        # url = 'https://api.kavenegar.com/v1/%s/sms/send.json' % {api_key}
-        # data = {"receptor": "09395377024", "text": str(code)}
-        # r = requests.post(url, data=data)
 
         return Response({"msg": "code sent successfully"}, status=status.HTTP_200_OK)
 
 
 class DrVerifyOTP(APIView):
+    """
+    api for check OTp code for login doctor
+    """
 
     def post(self, request):
         phone_number = self.request.data['phone_number']
@@ -120,10 +116,13 @@ class DrVerifyOTP(APIView):
         if code != cached_code:
             return Response({"msg": "code not matched"}, status=status.HTTP_403_FORBIDDEN)
         token = get_tokens_for_user(dr_user)
-        return Response({'token': token, 'msg': 'Successful'}, status=status.HTTP_201_CREATED)
+        return Response(token, status=status.HTTP_201_CREATED)
 
 
 class DrCompleteInfo(APIView):
+    """
+    api for complete doctor info after registeration
+    """
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
@@ -144,13 +143,19 @@ class DrCompleteInfo(APIView):
 
 
 class NumActiveDoctor(APIView):
+    """
+    number of all active doctor
+    """
 
     def get(self, request):
-        query = DoctorUser.objects.all().count()
+        query = DoctorUser.objects.all(is_active=True).count()
         return Response({"num_active_doctor": query}, status=status.HTTP_200_OK)
 
 
 class RecentComment(APIView):
+    """
+    list of last 10 comment about all doctors order by rate
+    """
 
     def get(self, request):
 
@@ -161,6 +166,10 @@ class RecentComment(APIView):
 
 
 class All_Specialist(APIView):
+    """
+    List of all specialties of doctors
+    """
+
     def get(self, request):
         query = DoctorSpecialist.objects.all()
         serializer = DoctorSpecialistSerializer(query, many=True)
@@ -168,6 +177,9 @@ class All_Specialist(APIView):
 
 
 class TopDoctors(APIView):
+    """
+    api for list of best doctors (top 10)
+    """
 
     def get(self, request):
         query = sorted(DoctorUser.objects.all(),
@@ -177,6 +189,10 @@ class TopDoctors(APIView):
 
 
 class DoctorsList(APIView):
+    """
+    api for list of all doctors sorted by rate  
+    """
+
     def get(self, request):
         query = sorted(DoctorUser.objects.all(),
                        key=lambda a: a.rate, reverse=True)
@@ -185,6 +201,10 @@ class DoctorsList(APIView):
 
 
 class DoctorDetail(APIView):
+    """
+    api for more detail about doctor
+    """
+
     def get(self, request, pk):
         query = DoctorUser.objects.get(id=pk)
         serializer = DoctorDetailSerializer(query)
@@ -192,28 +212,26 @@ class DoctorDetail(APIView):
 
 
 class CommentForOneDoctor(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    """
+    api for retrive all comment about one doctor
+    """
 
-    def get(self, request, pk):
+    def get(self, request, dr_id):
 
-        query = CommentForDoctor.objects.filter(id=pk).order_by(
-            '-rating', 'create_time').order_by('?')
+        query = CommentForDoctor.objects.filter(doctor__id=dr_id).order_by(
+            '-rating', 'create_time')
         serializer = CommentSerializers(query, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = CommentSerializers(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class DoctorAdvanceSearch(APIView):
+    """
+    api for advance search about doctor
+    """
+
     def post(self, request):
         data = self.request.data
         query = DoctorUser.objects.all()
-        print(data)
-        print('####################################')
         try:
             doctor_name = data['doctor_name']
             query = query.filter(full_name=doctor_name)
@@ -243,6 +261,9 @@ class DoctorAdvanceSearch(APIView):
 
 
 class DoctorReserveApointment(APIView):
+    """
+    api for show all reserve appointment 
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -253,6 +274,9 @@ class DoctorReserveApointment(APIView):
 
 
 class DrRegisterInformations(APIView):
+    """
+    api for register informations about doctor
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -262,6 +286,9 @@ class DrRegisterInformations(APIView):
 
 
 class RetriveDoctorShiftTime(APIView):
+    """
+    api for retrive all doctor shift time
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, dr_pk):
@@ -271,6 +298,9 @@ class RetriveDoctorShiftTime(APIView):
 
 
 class CreateDoctorShiftTime(APIView):
+    """
+    api for create doctor shift time
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dr_pk):
@@ -283,6 +313,9 @@ class CreateDoctorShiftTime(APIView):
 
 
 class UpdateDoctorShiftTime(APIView):
+    """
+    api for update doctor shift time
+    """
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
@@ -295,6 +328,9 @@ class UpdateDoctorShiftTime(APIView):
 
 
 class DeleteDoctorShiftTime(APIView):
+    """
+    api for delete doctor shift time
+    """
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
@@ -304,6 +340,9 @@ class DeleteDoctorShiftTime(APIView):
 
 
 class DoctorAddressInfo(APIView):
+    """
+    api for get add and update doctor address
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, dr_pk):
@@ -329,6 +368,9 @@ class DoctorAddressInfo(APIView):
 
 
 class RetriveDoctorTellePhone(APIView):
+    """
+    api for retrive all doctor telephone
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, dr_pk):
@@ -338,6 +380,9 @@ class RetriveDoctorTellePhone(APIView):
 
 
 class CreateDoctorTellePhone(APIView):
+    """
+    api for add doctor telephone
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dr_pk):
@@ -350,6 +395,9 @@ class CreateDoctorTellePhone(APIView):
 
 
 class UpdateDoctorTellePhone(APIView):
+    """
+    api for update doctor telephone
+    """
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
@@ -362,6 +410,9 @@ class UpdateDoctorTellePhone(APIView):
 
 
 class DeleteDoctorTellePhone(APIView):
+    """
+    api for delete doctor telephone
+    """
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
@@ -371,6 +422,9 @@ class DeleteDoctorTellePhone(APIView):
 
 
 class DoctorVisitTime(APIView):
+    """
+    api for add doctor duration of visit 
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, dr_pk):
@@ -388,6 +442,9 @@ class DoctorVisitTime(APIView):
 
 
 class DoctorWorkDays(APIView):
+    """
+    api for add and delete workdays of doctor 
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, dr_pk):
@@ -412,6 +469,9 @@ class DoctorWorkDays(APIView):
 
 
 class DrChangePhoneNumber(APIView):
+    """
+    api for change doctor phone number
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dr_pk):
@@ -421,6 +481,3 @@ class DrChangePhoneNumber(APIView):
         dr_obj.phone_number = new_phone_number
         dr_obj.save()
         return Response({'msg': 'your new phone number saved'}, status=status.HTTP_202_ACCEPTED)
-
-
-

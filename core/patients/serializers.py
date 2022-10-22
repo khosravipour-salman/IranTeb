@@ -2,6 +2,7 @@ from dataclasses import fields
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
 from patients.models import Appointment, Wallet, Patient
+from doctors.models import CommentForDoctor
 
 
 class LogOutSerializer(serializers.Serializer):
@@ -28,13 +29,26 @@ class patientCompleteInfoSerilizer(serializers.ModelSerializer):
         fields = ('full_name', 'national_code', 'Insurance',)
 
 
+class AddCommentSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = CommentForDoctor
+        fields = ('desciption', 'rating','doctor','user')
+
+    def validate(self, data):
+        # Only patients who have been visited by doctors can add comment
+        doctor=data['doctor']
+        user=data['user']
+        check_appointmnt=Appointment.objects.filter(doctor=doctor,user=user,status_reservation='reserved').exists()
+        if check_appointmnt==False:
+            raise serializers.ValidationError("You are not allowed to add comment")
+        return data
+
 class ReserveAppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = ('doctor_name', 'reservetion_code', 'doctor_address', 'doctor_telephones',
                   'start_visit_time', 'end_visit_time', 'status_reservation', 'visit_day', 'payment')
 
-    # 'start_visit_time','end_visit_time','day','status_reservation'
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -56,10 +70,11 @@ class MyDoctorsSerializer(serializers.ModelSerializer):
 
 class DoctorFreeAppointmentSerializer(serializers.ModelSerializer):
     def get_doctor(self, obj):
-        return obj.doctor.full_name
+        return {'doctor_id': obj.doctor.id, 'doctor_name': obj.doctor.full_name}
 
     def get_day_name(self, obj):
         return obj.date_of_visit.strftime("%A")
+
     day_name = serializers.SerializerMethodField('get_day_name')
 
     doctor = serializers.SerializerMethodField('get_doctor')

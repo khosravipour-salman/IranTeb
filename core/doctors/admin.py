@@ -29,13 +29,13 @@ class DoctorAdmin(BaseUserAdmin):
     form = UserAdminChangeForm
     add_form = UserAdminCreationForm
 
-    list_display = ['id','first_name', 'last_name','full_name', 'email', 'phone_number','is_staff', 'is_active', 'registeration_date', 'last_seen', ]    
+    list_display = ['id','full_name','phone_number','national_code','doctor_or_patient', 'is_active', 'registeration_date', ]    
 
     list_filter = ['is_staff']
     fieldsets = (
-        (None, {'fields': ('first_name', 'last_name','full_name' ,'email', 'phone_number', 'visit_time','doctor_specialist','gender','city', )}),
+        (None, {'fields': ('profile_image','full_name' , 'phone_number', 'cost_of_visit','visit_time','doctor_specialist','gender','city', )}),
         # ('Personal info', {'fields': ('phone_number', 'bio', 'profile_image')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'last_seen', )}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', )}),
     )
     add_fieldsets = (
         (None, {

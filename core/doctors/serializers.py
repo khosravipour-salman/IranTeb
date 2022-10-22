@@ -68,8 +68,6 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
         'get_doctor_specialist', read_only=True)
 
     def get_doctor_specialist(self, obj):
-        # return str ({"specialist":obj.doctor_specialist.parent,
-        # " high specialist'":obj.doctor_specialist.specialist})
         a = {"specialist": obj.doctor_specialist.parent,
              " high specialist'": obj.doctor_specialist.specialist}
 

@@ -29,6 +29,7 @@ class DoctorUser(User):
         ('male', 'male'),
         ('female', 'female'),
     )
+
     # city_choice=(
     # ('Tehran','Tehran'),
     # ('Esfahan','Esfahan'),
@@ -38,12 +39,13 @@ class DoctorUser(User):
     # ('Khoozestan','Khoozestan'),
     # )
 
-    full_name = models.CharField(max_length=80)
+    # full_name = models.CharField(max_length=80)
     medical_system_code = models.IntegerField(null=True, blank=True)
+    national_code = models.PositiveBigIntegerField(null=True)
     registeration_date = jmodels.jDateTimeField(
         auto_now_add=True, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
-    cost_visit = models.PositiveBigIntegerField(
+    cost_of_visit = models.PositiveBigIntegerField(
         default=10000, null=True, blank=True)
     visit_time = models.CharField(
         max_length=10, choices=time_choices, null=True, blank=True)
@@ -54,22 +56,6 @@ class DoctorUser(User):
     city = models.ForeignKey('doctors.DoctorCity',
                              on_delete=models.CASCADE, null=True, blank=True)
 
-    # def save(self, *args, **kwargs):
-    # super().save(*args, **kwargs)  # Call the "real" save() method.
-    # a=Appointment.objects.all().filter( doctor = self ).exists()
-    # if a==False:
-    # self.model = Appointment.objects.create( doctor = self )
-
-
-# from doctors.models import DoctorUser
-# d = DoctorUser.objects.all()[0]
-# d.get_user_shifts()
-
-# vt --> int
-# 16 ta 8 --> total 8
-# 8 * 60 --> 4800 minute
-# 4800 / vt --> chndta visit_time
-# foreach --> vt + st 8:45,
 
 
     @property
@@ -191,8 +177,8 @@ class DoctorAddress(models.Model):
     doctor = models.OneToOneField(
         'doctors.DoctorUser', on_delete=models.CASCADE, related_name='dr_address')
     address = models.TextField(null=True, blank=True)
-    lat = models.DecimalField(max_digits=9, decimal_places=6,null=True)
-    long = models.DecimalField(max_digits=9, decimal_places=6,null=True)
+    lat = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    long = models.DecimalField(max_digits=9, decimal_places=6, null=True)
 
     def __str__(self):
         return f'{self.address} for {self.doctor}'
